@@ -1,4 +1,4 @@
-net: "/home/kaveena/prune-oracle/caffe-pruned-models/NIN-CIFAR10/masked.prototxt"
+net: "/home/kaveena/compare-pruning-signals/caffe-pruned-models/NIN-CIFAR10/masked.prototxt"
 test_iter: 100
 test_interval: 400
 base_lr: 0.001
