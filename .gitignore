@@ -1,0 +1,16 @@
+# ignore all compiled files
+*.pyc
+
+# ignore all caffemodels
+*.caffemodels
+
+# ignore all results and log files
+*.npy
+
+# ignore init files
+*/__init__.py
+__init__.py
+
+# ignore pdf files
+*.pdf
+*.png
