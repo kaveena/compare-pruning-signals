@@ -42,7 +42,7 @@ do
           \--saliency-norm $norm \
           \--normalisation $normalisation \
           \--eval-size 10 \
-          \--test-interval 100 \
+          \--test-interval 50 \
           \--saliency-input $input
         fi
       done
