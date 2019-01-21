@@ -2,7 +2,7 @@
 *.pyc
 
 # ignore all caffemodels
-*.caffemodels
+*.caffemodel
 
 # ignore all results and log files
 *.npy
