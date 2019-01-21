@@ -1,5 +1,5 @@
 #! /bin/bash
-arch=AlexNet-CIFAR10
+arch=CIFAR10-CIFAR10
 caffe_models=caffe-pruned-models
 cifar10_data=../caffe-cifar-10-training
 saliency_input="WEIGHT ACTIVATION"
@@ -41,8 +41,8 @@ do
           \--method $saliency_method \
           \--saliency-norm $norm \
           \--normalisation $normalisation \
-          \--eval-size 10 \
-          \--test-interval 50 \
+          \--retrain \
+          \--train-size 20 \
           \--saliency-input $input
         fi
       done
@@ -62,8 +62,8 @@ then
   \--prune \
   \--filename $filename \
   \--stop-acc 10.0 \
-  \--eval-size 10 \
-  \--test-interval 50 \
+  \--retrain \
+  \--train-size 20 \
   \--method random
 fi
 
@@ -83,8 +83,8 @@ do
     \--stop-acc 10.0 \
     \--method $saliency_method \
     \--normalisation $normalisation \
-    \--eval-size 10 \
-    \--test-interval 50 \
+    \--retrain \
+    \--train-size 20 \
     \--saliency-input ACTIVATION
   fi
 done

@@ -43,6 +43,8 @@ do
           \--normalisation $normalisation \
           \--eval-size 10 \
           \--test-interval 50 \
+          \--retrain \
+          \--train-size 20 \
           \--saliency-input $input
         fi
       done
@@ -64,6 +66,8 @@ then
   \--stop-acc 10.0 \
   \--eval-size 10 \
   \--test-interval 50 \
+  \--retrain \
+  \--train-size 20 \
   \--method random
 fi
 
@@ -85,6 +89,8 @@ do
     \--normalisation $normalisation \
     \--eval-size 10 \
     \--test-interval 50 \
+    \--retrain \
+    \--train-size 10 \
     \--saliency-input ACTIVATION
   fi
 done
