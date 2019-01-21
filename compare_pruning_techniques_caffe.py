@@ -146,11 +146,13 @@ if __name__=='__main__':
     # compute saliency    
     evalset_size = args.eval_size;
     for iter in range(evalset_size):
+      if method == 'random':
+        break
       net.forward()
       net.backward()
-      if (args.method == 'WEIGHT_AVG')  and (args.saliency_input == 'WEIGHT'):
+      if (method == 'WEIGHT_AVG')  and (args.saliency_input == 'WEIGHT'):
         break   #no need to do multiple passes of the network
-      if (args.method == 'apoz'):
+      if (method == 'apoz'):
         pruning_signal_partial = np.array([])
         if (args.saliency_input == 'ACTIVATION'):
           for layer in convolution_list:
@@ -173,7 +175,7 @@ if __name__=='__main__':
           print('Not implemented')
           sys.exit(-1)
     
-    if (args.method != 'WEIGHT_AVG')  or (args.saliency_input != 'WEIGHT'):
+    if (method != 'WEIGHT_AVG')  or (args.saliency_input != 'WEIGHT'):
       pruning_signal /= float(evalset_size) # get approximate change in loss using taylor expansions
           
 
@@ -190,7 +192,7 @@ if __name__=='__main__':
         exec('saliency_normalised='+args.normalisation+'(saliency_data, n, m, h , w, c , k, args.saliency_input)')
         pruning_signal = np.hstack([pruning_signal, saliency_normalised])
     
-    if 'random' in method:
+    if method == 'random':
       pruning_signal = np.zeros(total_channels)
       pruning_signal[random.sample(active_channel, 1)] = -1
 
