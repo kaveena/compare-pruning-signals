@@ -27,7 +27,7 @@ do
         input_lower=${input,,}
         saliency_method_lower=${saliency_method,,}
         norm_lower=${norm,,}
-        filename=$default_save_path/summary_$input_lower-$saliency_method_lower-$norm_lower\_norm-$normalisation\_caffe.npy
+        filename=$default_save_path/summary_retrain_$input_lower-$saliency_method_lower-$norm_lower\_norm-$normalisation\_caffe.npy
         if [[ ! -e  $filename ]]
         then
           echo $filename
@@ -53,7 +53,7 @@ do
 done
 
 # random
-filename=$default_save_path/summary_random_caffe.npy
+filename=$default_save_path/summary_retrain_random_caffe.npy
 if [[ ! -e  $filename ]]
 then
   echo $filename
@@ -74,7 +74,7 @@ fi
 saliency_method="apoz"
 for normalisation in $normalisation_python
 do
-  filename=$default_save_path/summary_$saliency_method-$normalisation\_caffe.npy
+  filename=$default_save_path/summary_retrain_$saliency_method-$normalisation\_caffe.npy
   if [[ ! -e  $filename ]]
   then
     echo $filename
