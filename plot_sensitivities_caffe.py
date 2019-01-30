@@ -11,8 +11,9 @@ import caffe
 import triNNity
 from functools import reduce
 import sys
+import gc
 
-to_torch_arch = {'LeNet-5-CIFAR10': 'LeNet_5', 'AlexNet-CIFAR10': 'AlexNet', 'NIN-CIFAR10': 'NIN'}
+to_torch_arch = {'LeNet-5-CIFAR10': 'LeNet_5', 'AlexNet-CIFAR10': 'AlexNet', 'NIN-CIFAR10': 'NIN', 'CIFAR10-CIFAR10': 'CIFAR10'}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--arch-caffe', action='store', default='LeNet-5-CIFAR10')
@@ -28,23 +29,23 @@ prototxt = 'caffe-pruned-models/'+ args.arch_caffe + '/test.prototxt'
 caffemodel = 'caffe-pruned-models/'+ args.arch_caffe + '/original.caffemodel'
 net = caffe.Net(prototxt, caffemodel, caffe.TEST)
 
-graph = IRGraphBuilder(prototxt, 'test').build()
-graph = DataInjector(prototxt, caffemodel)(graph)
+original_graph = IRGraphBuilder(prototxt, 'test').build()
+original_graph = DataInjector(prototxt, caffemodel)(original_graph)
 
-graph.compute_output_shapes()
-list_modules = graph.node_lut
+original_graph.compute_output_shapes()
+original_list_modules = original_graph.node_lut
 
-for l in list_modules.keys():
-  if list_modules[l].data is not None:
-    list_modules[l].params_shape = list(map(lambda x: list(x.shape), list_modules[l].data))
+for l in original_list_modules.keys():
+  if original_list_modules[l].data is not None:
+    original_list_modules[l].params_shape = list(map(lambda x: list(x.shape), original_list_modules[l].data))
 
 convolution_list = list(filter(lambda x: 'Convolution' in net.layer_dict[x].type, net.layer_dict.keys()))
 
 channels = []
 total_channels = 0
 for layer in convolution_list:
-  total_channels += list_modules[layer].layer.parameters.num_output
-  channels.append(list_modules[layer].layer.parameters.num_output)
+  total_channels += original_list_modules[layer].layer.parameters.num_output
+  channels.append(original_list_modules[layer].layer.parameters.num_output)
 channels = np.array(channels)
 channels = np.cumsum(channels)
 
@@ -52,7 +53,8 @@ initial_num_param = 0
 initial_conv_param = 0
 initial_fc_param = 0
 
-initial_conv_param, initial_fc_param = compute_num_param(list_modules) 
+update_param_shape(original_list_modules)
+initial_conv_param, initial_fc_param = compute_num_param(original_list_modules) 
 
 initial_num_param = initial_conv_param + initial_fc_param
 
@@ -108,12 +110,11 @@ for i in range(len(all_pruning)):
     test_acc = new_test_acc
     # Re-compute sparsity
     graph = IRGraphBuilder(prototxt, 'test').build()
-    graph = DataInjector(prototxt, caffemodel)(graph)
     graph.compute_output_shapes()
     list_modules = graph.node_lut
     for l in list_modules.keys():
-      if list_modules[l].data is not None:
-        list_modules[l].params_shape = list(map(lambda x: list(x.shape), list_modules[l].data))
+      if original_list_modules[l].data is not None:
+        list_modules[l].params_shape = original_list_modules[l].params_shape.copy()
     
     new_num_param = correct_sparsity(summary_pruning_strategies[method], convolution_list, graph, channels, args.arch, total_channels, stop_itr=idx_test)
     
@@ -136,14 +137,15 @@ for saliency in caffe_methods:
         else:
           continue
         plt.plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=norm + '-' + normalisation)
-        plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', saliency: '+ saliency + ' using ' +saliency_input + 's' )
-        plt.xlabel('Sparsity Level in Convolution Layers')        
-        plt.ylabel('Test Set Accuracy')                                                    
+        gc.collect()
+    plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', saliency: '+ saliency + ' using ' +saliency_input + 's' )
+    plt.xlabel('Sparsity Level in Convolution Layers')        
+    plt.ylabel('Test Set Accuracy')                                                    
     plt.legend(loc = 'lower left',prop = {'size': 6})
     if args.retrain:
       plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'_pruning.pdf', bbox_inches='tight') 
     else:
-      plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'_sensitivity.pdf', bbox_inches='tight') 
+      plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'_sensitivity.pdf', bbox_inches='tight')
 
 for saliency in python_methods:  
   plt.figure()
