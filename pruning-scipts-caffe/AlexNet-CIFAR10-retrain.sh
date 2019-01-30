@@ -44,7 +44,7 @@ do
           \--eval-size 10 \
           \--test-interval 50 \
           \--retrain \
-          \--train-size 20 \
+          \--train-size 10 \
           \--saliency-input $input
         fi
       done
@@ -67,7 +67,7 @@ then
   \--eval-size 10 \
   \--test-interval 50 \
   \--retrain \
-  \--train-size 20 \
+  \--train-size 10 \
   \--method random
 fi
 
