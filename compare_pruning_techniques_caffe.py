@@ -73,7 +73,7 @@ def UpdateMask(net, pruned_channel, convolution_list, channels, prune=True, fina
   fill = 0 if prune else 1
   idx = np.where(channels>pruned_channel)[0][0]
   idx_convolution = convolution_list[idx]
-  idx_channel = (prune_channel - channels[idx-1]) if idx > 0 else prune_channel
+  idx_channel = (pruned_channel - channels[idx-1]) if idx > 0 else pruned_channel
   conv_module = net.layer_dict[idx_convolution]
   bias = conv_module.bias_term_
   if final and prune:
