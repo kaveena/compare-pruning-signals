@@ -4,6 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
+from plot_util import *
+from triNNity.frontend.graph import IRGraphBuilder
+from triNNity.util.transformers import DataInjector
+import caffe
+import triNNity
+from functools import reduce
 
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
@@ -64,57 +70,47 @@ def choose_linestyle(method):
     else:
         return '--'
 
-def get_corresponding_channel_resnet(channels_so_far_pruned, layer_1, local_channel_1, layer_2, convolution_original, convolution_list, channels):
-    m1, c1, k1, _ = convolution_original[layer_1] 
-    m2, c2, k2, _ = convolution_original[layer_2] # in resnets channels only increase
-    if m1 > m2 :
-        if (local_channel_1 < m2 //2)  or (local_channel_1 > (m2 - 1 + (m2//2))):
-            return True
-        else:
-            local_channel_2 = local_channel_1 - (m2 //2)
-    elif m2 < m1 : 
-            local_channel_2 = local_channel_1 + (m2 //2)
-    else:
-        local_channel_2 = local_channel_1
-    global_channel_2 = local_channel_2 if convolution_list.index(layer_2) == 0 else channels[convolution_list.index(layer_2)-1] + local_channel_2
-    if (global_channel_2 in channels_so_far_pruned):
-        return True
-    else:
-        return False
+def update_param_shape(list_modules):
+  for l in list_modules.keys(): 
+    if list_modules[l].kind == 'Convolution': 
+      #check m 
+      list_modules[l].params_shape[0][0] = list_modules[l].output_shape.channels 
+      if len(list_modules[l].params_shape) > 1 : 
+        list_modules[l].params_shape[1][0] = list_modules[l].output_shape.channels 
+      #check c 
+      list_modules[l].params_shape[0][1] = list_modules[l].get_only_parent().output_shape.channels 
+    if list_modules[l].kind == 'InnerProduct': 
+      list_modules[l].params_shape[0][1] = list_modules[l].get_only_parent().output_shape.channels * list_modules[l].get_only_parent().output_shape.height * list_modules[l].get_only_parent().output_shape.width 
+      if len(list_modules[l].params_shape) > 1 : 
+        list_modules[l].params_shape[1][0] = list_modules[l].params_shape[0][1] 
 
-def correct_sparsity(summary, convolution_list, convolution_original, convolution_previous, convolution_next, convolution_summary, channels, arch, stop_itr=0):
-    total_channels = len(summary['test_acc'])
-    old_sparsity = summary['num_param']
-    correct_param = np.zeros(total_channels)
-    initial_param = summary['initial_param']
-    channels_so_far_pruned = []
-    for i in range(total_channels):
-        pruned_channel = summary['pruned_channel'][i]
-        channels_so_far_pruned.append(pruned_channel)
-        if old_sparsity[i] == 0:
-            break
-        idx = np.where(channels>pruned_channel)[0][0]
-        idx_convolution = convolution_list[idx]
-        idx_channel = (pruned_channel - channels[idx-1]) if idx > 0 else pruned_channel
-        m_0, c_0, k_0, _ = convolution_summary[idx_convolution]
-        initial_param -= c_0 * k_0 * k_0
-        convolution_summary[idx_convolution][0] -= 1 # Decrease the number of output features of the current layer by one
-        if idx_convolution in convolution_next.keys(): # If the next layer is a conv layer
-            l = convolution_next[idx_convolution]
-            if arch.startswith('resnet'):
-                for output_layer in l: #consumer layers of currently pruned channel
-                    safe_to_prune = True
-                    for input_layer in convolution_previous[output_layer]:# producer layers of consumer layer, we need to check that all producers of the current consumer are pruned before pruning the consumer
-                        safe_to_prune &= get_corresponding_channel_resnet(channels_so_far_pruned, idx_convolution, idx_channel, input_layer, convolution_original, convolution_list, channels)
-                    if safe_to_prune:
-                        m_1, c_1, k_1, _ = convolution_summary[output_layer]
-                        initial_param -= m_1 * k_1 * k_1
-                        convolution_summary[output_layer][1] -= 1
-            else:
-                m_1, c_1, k_1, _ = convolution_summary[l]
-                initial_param -= m_1 * k_1 * k_1
-                convolution_summary[l][1] -= 1
-        correct_param[i] = initial_param
-        if (stop_itr>0) and (i == stop_itr):
-            break
-    return correct_param
+def compute_num_param(list_modules):
+  conv_param = 0 
+  fc_param = 0
+  for l in list_modules.keys():
+    if list_modules[l].kind == 'Convolution':
+      conv_param += reduce(lambda u, v: u + v, list(map(lambda x: reduce(lambda a, b: a * b, x), list_modules[l].params_shape)))
+    if list_modules[l].kind == 'InnerProduct':
+      fc_param += reduce(lambda u, v: u + v, list(map(lambda x: reduce(lambda a, b: a * b, x), list_modules[l].params_shape)))
+  return conv_param, fc_param
+
+def remove_channel(pruned_channel, convolution_list, channels, list_modules):
+  idx = np.where(channels>pruned_channel)[0][0]
+  idx_convolution = convolution_list[idx]
+  idx_channel = (pruned_channel - channels[idx-1]) if idx > 0 else pruned_channel
+  list_modules[idx_convolution].layer.parameters.num_output -= 1
+
+def correct_sparsity(summary, convolution_list, graph, channels, arch, total_channels, stop_itr): 
+  list_modules = graph.node_lut
+  graph.compute_output_shapes()
+  initial_conv_param, initial_fc_param = compute_num_param(list_modules)
+  new_num_param = np.zeros(total_channels)
+  for i in range(total_channels):
+    remove_channel(summary['pruned_channel'][i], convolution_list, channels, list_modules)
+    graph.compute_output_shapes()
+    update_param_shape(list_modules)
+    conv_param, fc_param = compute_num_param(list_modules)
+    new_num_param[i] = conv_param
+    if (stop_itr>0) and (i==stop_itr):
+      break 
+  return new_num_param  
