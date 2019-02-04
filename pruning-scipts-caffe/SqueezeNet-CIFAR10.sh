@@ -41,9 +41,9 @@ do
           \--method $saliency_method \
           \--saliency-norm $norm \
           \--normalisation $normalisation \
-          \--test-interval 20 \
+          \--test-interval 100 \
           \--train-size 40 \
-          \--eval-size 20 \
+          \--eval-size 10 \
           \--saliency-input $input
         fi
       done
@@ -63,9 +63,9 @@ then
   \--prune \
   \--filename $filename \
   \--stop-acc 10.0 \
-  \--test-interval 20 \
+  \--test-interval 100 \
   \--train-size 40 \
-  \--eval-size 20 \
+  \--eval-size 10 \
   \--method random
 fi
 
@@ -85,9 +85,9 @@ do
     \--stop-acc 10.0 \
     \--method $saliency_method \
     \--normalisation $normalisation \
-    \--test-interval 20 \
+    \--test-interval 100 \
     \--train-size 40 \
-    \--eval-size 20 \
+    \--eval-size 10 \
     \--saliency-input ACTIVATION
   fi
 done
