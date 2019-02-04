@@ -42,6 +42,8 @@ do
           \--saliency-norm $norm \
           \--normalisation $normalisation \
           \--test-interval 20 \
+          \--train-size 40 \
+          \--eval-size 20 \
           \--saliency-input $input
         fi
       done
@@ -62,6 +64,8 @@ then
   \--filename $filename \
   \--stop-acc 10.0 \
   \--test-interval 20 \
+  \--train-size 40 \
+  \--eval-size 20 \
   \--method random
 fi
 
@@ -82,6 +86,8 @@ do
     \--method $saliency_method \
     \--normalisation $normalisation \
     \--test-interval 20 \
+    \--train-size 40 \
+    \--eval-size 20 \
     \--saliency-input ACTIVATION
   fi
 done
