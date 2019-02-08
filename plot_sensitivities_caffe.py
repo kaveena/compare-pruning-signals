@@ -13,7 +13,7 @@ from functools import reduce
 import sys
 import gc
 
-to_torch_arch = {'LeNet-5-CIFAR10': 'LeNet_5', 'AlexNet-CIFAR10': 'AlexNet', 'NIN-CIFAR10': 'NIN', 'CIFAR10-CIFAR10': 'CIFAR10'}
+to_torch_arch = {'LeNet-5-CIFAR10': 'LeNet_5', 'AlexNet-CIFAR10': 'AlexNet', 'NIN-CIFAR10': 'NIN', 'CIFAR10-CIFAR10': 'CIFAR10', 'SqueezeNet-CIFAR10': 'SqueezeNet'}
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--arch-caffe', action='store', default='LeNet-5-CIFAR10')
@@ -138,10 +138,17 @@ for saliency in caffe_methods:
           continue
         plt.plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=norm + '-' + normalisation)
         gc.collect()
+    plt.ylim(0, 100.0)
+    plt.xlim(0, 100.0)
+
+    plt.xticks(np.arange(0, 100, 10))
+    plt.yticks(np.arange(0, 100, 10))
+
     plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', saliency: '+ saliency + ' using ' +saliency_input + 's' )
     plt.xlabel('Sparsity Level in Convolution Layers')        
     plt.ylabel('Test Set Accuracy')                                                    
     plt.legend(loc = 'lower left',prop = {'size': 6})
+    plt.grid()
     if args.retrain:
       plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'_pruning.pdf', bbox_inches='tight') 
     else:
