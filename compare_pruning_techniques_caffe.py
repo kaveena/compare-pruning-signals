@@ -7,6 +7,7 @@ import numpy as np
 import caffe
 import argparse
 import random
+import time
 
 sys.dont_write_bytecode = True
 
@@ -85,6 +86,7 @@ def UpdateMask(net, pruned_channel, convolution_list, channels, prune=True, fina
     conv_module.blobs[conv_module.mask_pos_+1].data[idx_channel] = 0
 
 if __name__=='__main__':
+  start = time.time()
   args = parser().parse_args()
   if args.arch is None:
     print("Caffe solver needed")
@@ -129,7 +131,6 @@ if __name__=='__main__':
   summary = dict()
   summary['pruning_signal']= np.zeros((total_channels, total_channels))
   summary['test_acc'] = np.zeros(total_channels)
-  summary['num_param'] = np.zeros(total_channels)
   summary['pruned_channel'] = np.zeros(total_channels)
   summary['method'] = method + '-' + args.normalisation
   active_channel = list(range(total_channels))
@@ -216,6 +217,8 @@ if __name__=='__main__':
   #  if (j % 100) == 0 :
   #      np.save(args.filename+'.partial', summary)
   
+  end = time.time()
+  summary['exec_time'] = end - start
   np.save(args.filename, summary)
   
   caffe.set_mode_cpu()
