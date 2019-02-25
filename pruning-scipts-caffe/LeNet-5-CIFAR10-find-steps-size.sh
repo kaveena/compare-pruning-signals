@@ -48,3 +48,32 @@ do
     done
   done
 done
+
+eval_size=1
+for train_size in $all_train_size
+do
+  for test_size in $all_test_size
+  do
+    filename=$default_save_path/summary_weight-weight_avg-l1_norm-no_normalisation-$eval_size-$test_size-$train_size\_caffe.npy
+    if [[ ! -e  $filename ]]
+    then
+    echo $filename
+    GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
+    \--arch $masked_prototoxt \
+    \--arch-saliency $saliency_prototxt \
+    \--pretrained $caffe_models/$arch/original.caffemodel \
+    \--prune \
+    \--filename $filename \
+    \--stop-acc 10.0 \
+    \--method WEIGHT_AVG \
+    \--saliency-norm L1 \
+    \--normalisation no_normalisation \
+    \--eval-size $eval_size \
+    \--test-size $test_size \
+    \--train-size $train_size \
+    \--test-interval 1 \
+    \--retrain \
+    \--saliency-input WEIGHT
+    fi
+  done
+done

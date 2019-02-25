@@ -15,7 +15,7 @@ layer {
   }
   image_data_param {
     source: "caffe-training-data/train-index.txt"
-    batch_size: 32
+    batch_size: 128
     new_height: 32
     new_width: 32
   }
@@ -733,34 +733,25 @@ layer {
   bottom: "ip"
   bottom: "label"
   top: "loss"
-  include {
-    phase: TRAIN
-  }
 }
 
 layer {
-  name: "accuracy_top1"
+  name: "top-1"
   type: "Accuracy"
   bottom: "ip"
   bottom: "label"
-  top: "accuracy_top1"
-  include {
-    phase: TEST
-  }
+  top: "top-1"
   accuracy_param {
     top_k: 1
   }
 }
 
 layer {
-  name: "accuracy_top5"
+  name: "top-5"
   type: "Accuracy"
   bottom: "ip"
   bottom: "label"
-  top: "accuracy_top5"
-  include {
-    phase: TEST
-  }
+  top: "top-5"
   accuracy_param {
     top_k: 5
   }

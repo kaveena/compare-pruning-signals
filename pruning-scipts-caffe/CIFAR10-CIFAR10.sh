@@ -82,3 +82,77 @@ do
     \--saliency-input ACTIVATION
   fi
 done
+
+for input in $saliency_input
+do
+  for saliency_method in $saliency_caffe
+  do
+    for norm in $saliency_norm
+    do
+      for normalisation in $normalisation_python
+      do
+        if [[ "$saliency_method" == "FISHER" ]] && [[ "$norm" != "NONE" ]]
+        then
+          continue
+        fi
+        input_lower=${input,,}
+        saliency_method_lower=${saliency_method,,}
+        norm_lower=${norm,,}
+        filename=$default_save_path/summary_input_channels_$input_lower-$saliency_method_lower-$norm_lower\_norm-$normalisation\_caffe.npy
+        if [[ ! -e  $filename ]]
+        then
+          echo $filename
+          GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
+          \--arch $masked_prototoxt \
+          \--arch-saliency $saliency_prototxt \
+          \--pretrained $caffe_models/$arch/original.caffemodel \
+          \--prune \
+          \--filename $filename \
+          \--stop-acc 10.0 \
+          \--method $saliency_method \
+          \--saliency-norm $norm \
+          \--normalisation $normalisation \
+          \--input-channels-only \
+          \--saliency-input $input
+        fi
+      done
+    done
+  done
+done
+
+# random
+filename=$default_save_path/summary_input_channels_random_caffe.npy
+if [[ ! -e  $filename ]]
+then
+  echo $filename
+  GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
+  \--arch $masked_prototoxt \
+  \--arch-saliency $saliency_prototxt \
+  \--pretrained $caffe_models/$arch/original.caffemodel \
+  \--prune \
+  \--filename $filename \
+  \--stop-acc 10.0 \
+  \--input-channels-only \
+  \--method random
+fi
+
+saliency_method="apoz"
+for normalisation in $normalisation_python
+do
+  filename=$default_save_path/summary_input_channels_$saliency_method-$normalisation\_caffe.npy
+  if [[ ! -e  $filename ]]
+  then
+    echo $filename
+    GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
+    \--arch $masked_prototoxt \
+    \--arch-saliency $saliency_prototxt \
+    \--pretrained $caffe_models/$arch/original.caffemodel \
+    \--prune \
+    \--filename $filename \
+    \--stop-acc 10.0 \
+    \--method $saliency_method \
+    \--normalisation $normalisation \
+    \--input-channels-only \
+    \--saliency-input ACTIVATION
+  fi
+done

@@ -137,7 +137,7 @@ for saliency in caffe._caffe.SALIENCY.names.values():
   for k in convolution_list:
     diff_avg_caffe[k] = named_modules[k].blobs[named_modules[k].saliency_pos_].data[0]
     diff_avg[k] = net.blobs[k].diff.sum(axis=(0,2,3))
-    diff_avg_correct*=(np.allclose(diff_avg_caffe[k], diff_avg[k], rtol=1e-3))
+    diff_avg_correct*=(np.allclose(diff_avg_caffe[k], diff_avg[k]))
   
   print(saliency)
   if (fisher_correct):
