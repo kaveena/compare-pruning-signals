@@ -94,19 +94,39 @@ def compute_num_param(list_modules):
       fc_param += reduce(lambda u, v: u + v, list(map(lambda x: reduce(lambda a, b: a * b, x), list_modules[l].params_shape)))
   return conv_param, fc_param
 
-def remove_channel(pruned_channel, convolution_list, channels, list_modules):
+def remove_channel(pruned_channel, convolution_list, channels, list_modules, input=False):
   idx = np.where(channels>pruned_channel)[0][0]
   idx_convolution = convolution_list[idx]
   idx_channel = (pruned_channel - channels[idx-1]) if idx > 0 else pruned_channel
-  list_modules[idx_convolution].layer.parameters.num_output -= 1
+  if input:
+    parent = list_modules[idx_convolution].get_only_parent() # Conv layers have one input blob and one output blob for our networks
+    while(not(parent.kind=='Convolution' or parent.kind=='Input')):
+      if len(parent.parents) == 1:
+        parent = parent.get_only_parent()
+      elif (parent.kind == 'Concat'): #continue moving up the correct branch
+        cummulated_parent_output = 0
+        for p in parent.parents:
+          cummulated_parent_output += p.output_shape[1] #channel axis
+          if idx_channel < cummulated_parent_output:
+            break
+          parent = p
+      else:
+        sys.stderr.write("remove_channel parent.kind not implemented\n")
+        sys.exit(-1)
+    if parent.kind == 'Convolution':
+      parent.layer.parameters.num_output -= 1
+    elif parent.kind == 'Input':
+      parent.output_shape = (parent.output_shape.batch_size, parent.output_shape.channels-1, parent.output_shape.height, parent.output_shape.width)
+  else:
+    list_modules[idx_convolution].layer.parameters.num_output -= 1
 
-def correct_sparsity(summary, convolution_list, graph, channels, arch, total_channels, stop_itr): 
+def correct_sparsity(summary, convolution_list, graph, channels, arch, total_channels, stop_itr, input=False): 
   list_modules = graph.node_lut
   graph.compute_output_shapes()
   initial_conv_param, initial_fc_param = compute_num_param(list_modules)
   new_num_param = np.zeros(total_channels)
   for i in range(total_channels):
-    remove_channel(summary['pruned_channel'][i], convolution_list, channels, list_modules)
+    remove_channel(summary['pruned_channel'][i], convolution_list, channels, list_modules, input)
     graph.compute_output_shapes()
     update_param_shape(list_modules)
     conv_param, fc_param = compute_num_param(list_modules)

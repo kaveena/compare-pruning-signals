@@ -18,6 +18,7 @@ to_torch_arch = {'LeNet-5-CIFAR10': 'LeNet_5', 'AlexNet-CIFAR10': 'AlexNet', 'NI
 parser = argparse.ArgumentParser()
 parser.add_argument('--arch-caffe', action='store', default='LeNet-5-CIFAR10')
 parser.add_argument('--retrain', action='store_true', default=False)
+parser.add_argument('--input', action='store_true', default=False)
 parser.add_argument('--test-interval', type=int, action='store', default=1)
 
 args = parser.parse_args()  
@@ -41,13 +42,28 @@ for l in original_list_modules.keys():
 
 convolution_list = list(filter(lambda x: 'Convolution' in net.layer_dict[x].type, net.layer_dict.keys()))
 
-channels = []
-total_channels = 0
+output_channels = []
+total_output_channels = 0
 for layer in convolution_list:
-  total_channels += original_list_modules[layer].layer.parameters.num_output
-  channels.append(original_list_modules[layer].layer.parameters.num_output)
-channels = np.array(channels)
-channels = np.cumsum(channels)
+  total_output_channels += original_list_modules[layer].layer.parameters.num_output
+  output_channels.append(original_list_modules[layer].layer.parameters.num_output)
+output_channels = np.array(output_channels)
+output_channels = np.cumsum(output_channels)
+
+input_channels = []
+total_input_channels = 0
+for layer in convolution_list:
+  total_input_channels += net.layer_dict[layer].blobs[0].channels
+  input_channels.append(net.layer_dict[layer].blobs[0].channels)
+input_channels = np.array(input_channels)
+input_channels = np.cumsum(input_channels)
+
+if args.input:
+  channels = input_channels
+  total_channels = total_input_channels
+else:
+  channels = output_channels
+  total_channels = total_output_channels
 
 initial_num_param = 0
 initial_conv_param = 0
@@ -65,8 +81,7 @@ norms = ['l1_norm', 'l2_norm', 'none_norm']
 normalisations = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_normalisation']
 saliency_inputs = ['weight', 'activation']
 
-methods = []
-selected_methods = list(methods)
+all_methods = []
 summary_pruning_strategies = dict()
 oracle_augmented = []
 #Single heuristics
@@ -74,16 +89,20 @@ for saliency_input in saliency_inputs:
   for method in caffe_methods:
     for norm in norms:
       for normalisation in normalisations:
-        methods.append(saliency_input+'-'+ method + '-' + norm + '-' + normalisation)
+        all_methods.append(saliency_input+'-'+ method + '-' + norm + '-' + normalisation)
 for method in python_methods:
   for normalisation in normalisations:
-    methods.append(method + '-' + normalisation)
-methods.append('random')
+    all_methods.append(method + '-' + normalisation)
+all_methods.append('random')
 
-for method in methods:
-  summary_file = args.arch_caffe+'/results/prune/summary_'+method+'_caffe.npy'
+methods = list(all_methods)
+for method in all_methods:
   if args.retrain:
     summary_file = args.arch_caffe+'/results/prune/summary_retrain_'+method+'_caffe.npy'
+  elif args.input:
+    summary_file = args.arch_caffe+'/results/prune/summary_input_channels_'+method+'_caffe.npy'
+  else:
+    summary_file = args.arch_caffe+'/results/prune/summary_'+method+'_caffe.npy'
   if os.path.isfile(summary_file):
     summary_pruning_strategies[method] = dict(np.load(summary_file).item()) 
   else:
@@ -116,7 +135,7 @@ for i in range(len(all_pruning)):
       if original_list_modules[l].data is not None:
         list_modules[l].params_shape = original_list_modules[l].params_shape.copy()
     
-    new_num_param = correct_sparsity(summary_pruning_strategies[method], convolution_list, graph, channels, args.arch, total_channels, stop_itr=idx_test)
+    new_num_param = correct_sparsity(summary_pruning_strategies[method], convolution_list, graph, channels, args.arch, total_channels, stop_itr=idx_test, input=args.input)
     
     sparsity = 100 - 100 *(new_num_param.astype(float) / initial_conv_param )
     # Add data for unpruned network
@@ -151,6 +170,8 @@ for saliency in caffe_methods:
     plt.grid()
     if args.retrain:
       plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'_pruning.pdf', bbox_inches='tight') 
+    elif args.input:
+      plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'_input_sensitivity.pdf', bbox_inches='tight') 
     else:
       plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'_sensitivity.pdf', bbox_inches='tight')
 
@@ -164,14 +185,16 @@ for saliency in python_methods:
       continue
     summary = summary_pruning_strategies[method]
     plt.plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=method)
-    plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', ' + method)
-    plt.xlabel('Sparsity Level in Convolution Layers')        
-    plt.ylabel('Test Set Accuracy')                                                    
-    plt.legend(loc = 'lower left',prop = {'size': 6})
-    if args.retrain:
-      plt.savefig(args.arch_caffe+'/results/graph/'+ saliency + '_pruning.pdf', bbox_inches='tight') 
-    else:
-      plt.savefig(args.arch_caffe+'/results/graph/'+ saliency +'_sensitivity.pdf', bbox_inches='tight') 
+  plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', ' + method)
+  plt.xlabel('Sparsity Level in Convolution Layers')        
+  plt.ylabel('Test Set Accuracy')                                                    
+  plt.legend(loc = 'lower left',prop = {'size': 6})
+  if args.retrain:
+    plt.savefig(args.arch_caffe+'/results/graph/'+ saliency + '_pruning.pdf', bbox_inches='tight') 
+  if args.input:
+    plt.savefig(args.arch_caffe+'/results/graph/'+ saliency + '_input_sensitivity.pdf', bbox_inches='tight') 
+  else:
+    plt.savefig(args.arch_caffe+'/results/graph/'+ saliency +'_sensitivity.pdf', bbox_inches='tight') 
 #axes.set_title('Pruning Sensitivity for ' + args.arch_caffe)
 #plt.xlabel('Sparsity Level in Convolution Layers')        
 #plt.ylabel('Test Set Accuracy')                                                     
