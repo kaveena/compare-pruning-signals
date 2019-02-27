@@ -33,6 +33,10 @@ def parser():
             help='pretrained caffemodel')
     parser.add_argument('--retrain', action='store_true', default=False,
             help='retrain the pruned network')
+    parser.add_argument('--characterise', action='store_true', default=False,
+            help='characterise the pruned network')
+    parser.add_argument('--tolerance', type=float, default='1.0',
+            help='Drop in train loss before retraining starts')
     parser.add_argument('--prune', action='store_true', default=False,
             help='prune network')
     parser.add_argument('--filename', action='store', default='summary_',
@@ -159,6 +163,21 @@ if __name__=='__main__':
   test_acc, ce_loss = test(saliency_solver, args.test_size)
   summary['initial_test_acc'] = test_acc
   
+  # Train accuracy and loss
+  train_acc = 0.0
+  train_loss = 0.0
+  if args.characterise:
+    summary['train_loss'] = np.zeros(total_channels)
+    current_loss = saliency_solver.net.forward()['loss']
+    summary['Training_Monitor'] = np.empty(total_channels, dtype=np.object)
+    for i in range(100):
+      output = saliency_solver.net.forward()
+      train_loss += output['loss']
+    train_loss /= 100.0
+    print('Initial train loss', train_loss)
+    summary['initial_train_loss'] = train_loss
+  train_loss_upper_bound = (100 + args.tolerance) * train_loss / 100.0
+
   for j in range(total_channels): 
     if method in _caffe_saliencies_:
       for layer in convolution_list:
@@ -243,6 +262,19 @@ if __name__=='__main__':
     prune_channel_idx = np.argmin(pruning_signal[active_channel])
     prune_channel = active_channel[prune_channel_idx]
     UpdateMask(net, prune_channel, convolution_list, channels, final=True, input=args.input_channels_only)
+    
+    if args.characterise:
+      current_loss = saliency_solver.net.forward()['loss']
+      summary['train_loss'][j] = current_loss
+      training_monitor = np.array([])
+      for i in range(args.train_size):
+        if (current_loss <= train_loss_upper_bound):
+          break
+        current_loss = saliency_solver.net.forward()['loss']
+        saliency_solver.net.backward()
+        saliency_solver.apply_update()
+        training_monitor = np.hstack([training_monitor, current_loss])
+      summary['Training_Monitor'][j] = training_monitor.copy()
 
     if args.retrain:
       saliency_solver.step(args.train_size)
