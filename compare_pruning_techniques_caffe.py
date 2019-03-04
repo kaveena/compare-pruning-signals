@@ -156,27 +156,50 @@ if __name__=='__main__':
 
   summary = dict()
   summary['test_acc'] = np.zeros(total_channels)
+  summary['test_loss'] = np.zeros(total_channels)
   summary['pruned_channel'] = np.zeros(total_channels)
   summary['method'] = method + '-' + args.normalisation
   active_channel = list(range(total_channels))
   summary['initial_param'] = initial_density
   test_acc, ce_loss = test(saliency_solver, args.test_size)
   summary['initial_test_acc'] = test_acc
+  summary['initial_test_loss'] = ce_loss
+  summary['eval_loss'] = np.zeros(total_channels)
+  summary['eval_acc'] = np.zeros(total_channels)
+  initial_eval_loss = 0.0
+  initial_eval_acc = 0.0
+  for i in range(100):
+    output = net.forward()
+    initial_eval_loss += output['loss']
+    initial_eval_acc += output['top-1']
+  initial_eval_loss /= 100.0
+  initial_eval_acc /= 100.0
+  print('Initial eval loss', initial_eval_loss)
+  print('Initial eval acc', initial_eval_acc)
+  summary['initial_eval_loss'] = initial_eval_loss
+  summary['initial_eval_acc'] = initial_eval_acc
   
   # Train accuracy and loss
-  train_acc = 0.0
-  train_loss = 0.0
+  initial_train_acc = 0.0
+  initial_train_loss = 0.0
   if args.characterise:
     summary['train_loss'] = np.zeros(total_channels)
+    summary['train_acc'] = np.zeros(total_channels)
     current_loss = saliency_solver.net.forward()['loss']
-    summary['Training_Monitor'] = np.empty(total_channels, dtype=np.object)
+    summary['retraining_loss'] = np.empty(total_channels, dtype=np.object)
+    summary['retraining_acc'] = np.empty(total_channels, dtype=np.object)
     for i in range(100):
       output = saliency_solver.net.forward()
-      train_loss += output['loss']
-    train_loss /= 100.0
-    print('Initial train loss', train_loss)
-    summary['initial_train_loss'] = train_loss
-  train_loss_upper_bound = (100 + args.tolerance) * train_loss / 100.0
+      initial_train_loss += output['loss']
+      initial_train_acc += output['top-1']
+    initial_train_loss /= 100.0
+    initial_train_acc /= 100.0
+    print('Initial train loss', initial_train_loss)
+    print('Initial train acc', initial_train_acc)
+    summary['initial_train_loss'] = initial_train_loss
+    summary['initial_train_acc'] = initial_train_acc
+  train_loss_upper_bound = (100 + args.tolerance) * initial_train_loss / 100.0
+  train_acc_lower_bound = (100 - args.tolerance) * initial_train_acc / 100.0
 
   for j in range(total_channels): 
     if method in _caffe_saliencies_:
@@ -190,11 +213,16 @@ if __name__=='__main__':
   
     # compute saliency    
     evalset_size = args.eval_size;
+    current_eval_loss = 0.0
+    current_eval_acc = 0.0
     for iter in range(evalset_size):
       if method == 'random':
         break
-      net.forward()
+      output = net.forward()
       net.backward()
+      net.clear_param_diffs()
+      current_eval_loss += output['loss']
+      current_eval_acc += output['top-1']
       if (method == 'WEIGHT_AVG') and (args.saliency_input == 'WEIGHT'):
         break   #no need to do multiple passes of the network
       if (method == 'apoz'):
@@ -226,6 +254,8 @@ if __name__=='__main__':
         else:
           print('Not implemented')
           sys.exit(-1)
+    summary['eval_loss'][j] = current_eval_loss / float(iter+1)
+    summary['eval_acc'][j] = current_eval_acc / float(iter+1)
     
     if (method != 'WEIGHT_AVG') or (args.saliency_input != 'WEIGHT'):
       pruning_signal /= float(evalset_size) # get approximate change in loss using taylor expansions
@@ -264,17 +294,29 @@ if __name__=='__main__':
     UpdateMask(net, prune_channel, convolution_list, channels, final=True, input=args.input_channels_only)
     
     if args.characterise:
-      current_loss = saliency_solver.net.forward()['loss']
+      output_train = saliency_solver.net.forward()
+      current_loss = output_train['loss']
+      current_acc = output_train['top-1']
       summary['train_loss'][j] = current_loss
-      training_monitor = np.array([])
+      summary['train_acc'][j] = current_acc
+      retraining_loss = np.array([])
+      retraining_acc = np.array([])
       for i in range(args.train_size):
-        if (current_loss <= train_loss_upper_bound):
+#        if (current_loss <= train_loss_upper_bound):
+        if ((i==0) and (current_acc >= train_acc_lower_bound)):
           break
-        current_loss = saliency_solver.net.forward()['loss']
+        if (current_acc >= initial_train_acc):
+          break
+        output_train = saliency_solver.net.forward()
+        current_loss = output_train['loss']
+        current_acc = output_train['top-1']
         saliency_solver.net.backward()
         saliency_solver.apply_update()
-        training_monitor = np.hstack([training_monitor, current_loss])
-      summary['Training_Monitor'][j] = training_monitor.copy()
+        saliency_solver.net.clear_param_diffs()
+        retraining_loss = np.hstack([retraining_loss, current_loss])
+        retraining_acc = np.hstack([retraining_acc, current_acc])
+      summary['retraining_loss'][j] = retraining_loss.copy()
+      summary['retraining_acc'][j] = retraining_acc.copy()
 
     if args.retrain:
       saliency_solver.step(args.train_size)
@@ -282,6 +324,7 @@ if __name__=='__main__':
     if (j % args.test_interval == 0):
       test_acc, ce_loss = test(saliency_solver, args.test_size)
     summary['test_acc'][j] = test_acc
+    summary['test_loss'][j] = ce_loss
     summary['pruned_channel'][j] = prune_channel
     print(args.normalisation, method, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
     active_channel.remove(prune_channel)
