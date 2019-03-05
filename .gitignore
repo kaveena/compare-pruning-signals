@@ -6,6 +6,7 @@
 
 # ignore all results and log files
 *.npy
+*.log
 
 # ignore init files
 */__init__.py
