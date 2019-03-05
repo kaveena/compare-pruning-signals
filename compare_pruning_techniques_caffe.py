@@ -218,9 +218,9 @@ if __name__=='__main__':
     for iter in range(evalset_size):
       if method == 'random':
         break
+      net.clear_param_diffs()
       output = net.forward()
       net.backward()
-      net.clear_param_diffs()
       current_eval_loss += output['loss']
       current_eval_acc += output['top-1']
       if (method == 'WEIGHT_AVG') and (args.saliency_input == 'WEIGHT'):
@@ -307,12 +307,12 @@ if __name__=='__main__':
           break
         if (current_acc >= initial_train_acc):
           break
+        saliency_solver.net.clear_param_diffs()
         output_train = saliency_solver.net.forward()
         current_loss = output_train['loss']
         current_acc = output_train['top-1']
         saliency_solver.net.backward()
         saliency_solver.apply_update()
-        saliency_solver.net.clear_param_diffs()
         retraining_loss = np.hstack([retraining_loss, current_loss])
         retraining_acc = np.hstack([retraining_acc, current_acc])
       summary['retraining_loss'][j] = retraining_loss.copy()
