@@ -98,7 +98,6 @@ for method in all_methods:
 
 #plot test accuracy of using only one heuristic
 all_pruning = list(set(methods))
-#fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10,4), sharey=True)
 
 for i in range(len(all_pruning)):
     method = all_pruning[i]
@@ -133,26 +132,21 @@ for i in range(len(all_pruning)):
     summary_pruning_strategies[method]['test_acc'] = test_acc
     summary_pruning_strategies[method]['sparsity'] = sparsity
 
-for train_size in all_train_size:  
-  plt.figure()
-  for test_size in all_test_size:  
-    for eval_size in all_eval_size:  
+fig, axes = plt.subplots(nrows=6, ncols=7, figsize=(60,70), sharey=True)
+for i in range(len(all_test_size)):
+  test_size = all_test_size[i]
+  for j in range(len(all_eval_size)):
+    eval_size = all_eval_size[j]
+    for train_size in all_train_size:  
       method = args.method + '-' + eval_size + '-' + test_size + '-' + train_size
       if method in summary_pruning_strategies.keys():
         summary = summary_pruning_strategies[method]
       else:
         continue
-      plt.plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=test_size + '-' + eval_size)
-      gc.collect()
-  plt.ylim(0, 100.0)
-  plt.xlim(0, 100.0)
-
-  plt.xticks(np.arange(0, 100, 10))
-  plt.yticks(np.arange(0, 100, 10))
-
-  plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', saliency: ' + args.method + ' using train_size ' +train_size )
-  plt.xlabel('Sparsity Level in Convolution Layers')
-  plt.ylabel('Test Set Accuracy')
-  plt.legend(loc = 'lower left',prop = {'size': 6})
-  plt.grid()
-  plt.savefig(args.arch_caffe+'/results/graph/'+args.method+'-'+train_size+'_pruning.pdf', bbox_inches='tight')
+      axes[j,i].plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=train_size)
+    axes[j,i].grid()
+    axes[j,i].set_title('test size: ' + test_size + ' eval size: ' + eval_size)
+    axes[j,i].set_xlabel('Sparsity Level in Convolution Layers')
+    axes[j,i].set_ylabel('Test Set Accuracy')
+    axes[j,i].legend(loc = 'lower left',prop = {'size': 6})
+plt.savefig(args.arch_caffe+'/results/graph/'+args.method+'_train_size.pdf', bbox_inches='tight')

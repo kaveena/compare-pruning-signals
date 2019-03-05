@@ -10,6 +10,7 @@ from triNNity.util.transformers import DataInjector
 import caffe
 import triNNity
 from functools import reduce
+import matplotlib.colors as mcolors
 
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
@@ -20,29 +21,13 @@ def choose_linewidth(method):
     else:
         return 1.0
 
-def choose_color(method):
-    if 'fisher' in method:
-        return colors[1]    #orange
-    elif 'taylor-abbs-norm' in method:
-        return colors[0]    #blue
-    elif 'min-weight' in method:
-        return colors[2]    #green
-    elif 'mean-act' in method:
-        return colors[3]    #red
-    elif 'apoz' in method:
-        return colors[4]    #purple
-    elif 'l1-norm-weight' in method:
-        return colors[5]    #brown
-    elif 'random' in method:
-        return colors[6]    #pink
-    elif 'rms-grad-weight' in method:
-        return colors[8]    #
-    elif 'hybrid' in method:
-        return colors[9]    #cyan
-    elif 'oracle' in method:
-        return '#ffffff'    #black
-    else:
-        return colors[7]    #grey
+def get_color(norm, normalisation):
+  plot_colors = dict()
+  norm_to_int = {'no_normalisation':0, 'l0_normalisation':1, 'l1_normalisation':2, 'l2_normalisation': 3}
+  plot_colors['none_norm'] = ['maroon', 'red', 'pink', 'deeppink']
+  plot_colors['l1_norm'] = ['darkorange', 'yellow', 'lawngreen', 'forestgreen']
+  plot_colors['l2_norm'] = ['teal', 'cyan', 'blue', 'dodgerblue']
+  return mcolors.CSS4_COLORS[plot_colors[norm][norm_to_int[normalisation]]]
 
 def choose_label(method):
     if '_retrained' in method:
