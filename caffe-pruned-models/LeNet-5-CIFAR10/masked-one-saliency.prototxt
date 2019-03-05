@@ -183,9 +183,6 @@ layer {
   bottom: "ip2"
   bottom: "label"
   top: "top-1"
-  include {
-    phase: TEST
-  }
 }
 layer {
   name: "top-5"
@@ -193,9 +190,6 @@ layer {
   bottom: "ip2"
   bottom: "label"
   top: "top-5"
-  include {
-    phase: TEST
-  }
   accuracy_param {
     top_k: 5
   }
