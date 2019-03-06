@@ -23,6 +23,14 @@ l1_normalisation = lambda x, n, m, h, w, c, k, input_typ : x/float(np.abs(x).sum
 l2_normalisation = lambda x, n, m, h, w, c, k, input_typ : x/np.sqrt(np.power(x,2).sum()) if float(np.sqrt(np.power(x,2).sum())) != 0 else x
 no_normalisation = lambda x, n, m, h, w, c, k, input_typ : x
 
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def parser():
     parser = argparse.ArgumentParser(description='Caffe Channel Pruning Example')
     parser.add_argument('--arch', action='store', default=None,
@@ -31,14 +39,12 @@ def parser():
             help='saliency prototxt to use')
     parser.add_argument('--pretrained', action='store', default=None,
             help='pretrained caffemodel')
-    parser.add_argument('--retrain', action='store_true', default=False,
+    parser.add_argument('--retrain', type=str2bool, nargs='?', default=False,
             help='retrain the pruned network')
-    parser.add_argument('--characterise', action='store_true', default=False,
+    parser.add_argument('--characterise', type=str2bool, nargs='?', default=False,
             help='characterise the pruned network')
     parser.add_argument('--tolerance', type=float, default='1.0',
             help='Drop in train loss before retraining starts')
-    parser.add_argument('--prune', action='store_true', default=False,
-            help='prune network')
     parser.add_argument('--filename', action='store', default='summary_',
             help='prefix for storing pruning data')
     parser.add_argument('--stop-acc', type=float, default='10.0',
@@ -59,9 +65,9 @@ def parser():
             help='Number of batches to use for evaluating the saliency')
     parser.add_argument('--test-interval', type=int, default=1, 
             help='After how many pruning steps to test')
-    parser.add_argument('--input-channels-only', action='store_true', default=False,
+    parser.add_argument('--input-channels-only', type=str2bool, nargs='?', default=False,
             help='prune input channels only')
-    parser.add_argument('--input-output-channels', action='store_true', default=False,
+    parser.add_argument('--input-output-channels', type=str2bool, nargs='?', default=False,
             help='prune input and output channels')
     return parser
 
