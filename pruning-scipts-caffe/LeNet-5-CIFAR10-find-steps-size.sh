@@ -11,6 +11,14 @@ normalisation_python="l0_normalisation l1_normalisation l2_normalisation no_norm
 masked_prototoxt=$caffe_models\/$arch\/solver\-gpu.prototxt
 saliency_prototxt=$caffe_models/$arch/masked-one-saliency.prototxt
 default_save_path=$arch/results/prune
+force=false
+while getopts ":f" arg; do
+  case $arg in
+    f ) # Display help.
+      force=true
+      ;;
+  esac
+done
 
 all_eval_size="2 4 8 16 32 64"
 all_test_size="2 4 8 16 32 64 128"
@@ -25,7 +33,7 @@ do
     for eval_size in $all_eval_size
     do
       filename=$default_save_path/summary_activation-fisher-none_norm-no_normalisation-$eval_size-$test_size-$train_size\_caffe.npy
-      if [[ ! -e  $filename ]]
+      if [[ ! -e $filename ]] || [[ $force == true ]]
       then
         echo $filename
         GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
@@ -55,7 +63,7 @@ do
   for test_size in $all_test_size
   do
     filename=$default_save_path/summary_weight-weight_avg-l1_norm-no_normalisation-$eval_size-$test_size-$train_size\_caffe.npy
-    if [[ ! -e  $filename ]]
+    if [[ ! -e $filename ]] || [[ $force == true ]]
     then
     echo $filename
     GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
