@@ -84,7 +84,17 @@ def compute_sparsity(summary):
       pruning_itr_sparsity_90 = valid_idx[0]
 
 def plot_trend(metric1, metric2):
-  for saliency in caffe_methods:  
+filename_prefix = args.arch_caffe+'/results/graph'
+filename_suffix = '.pdf'
+if args.retrain:
+  filename_suffix = '_pruning' + filename_suffix
+elif args.characterise:
+  filename_suffix = '_characterise' + filename_suffix
+else:
+  filename_suffix = '_sensitivity' + filename_suffix
+if args.input:
+  filename_suffix = '_input' + filename_suffix
+for saliency in caffe_methods:  
     for saliency_input in saliency_inputs:
       plt.figure()
       for norm in norms:
@@ -103,19 +113,11 @@ def plot_trend(metric1, metric2):
 #      plt.xticks(np.arange(0, 100, 10))
 #      plt.yticks(np.arange(0, 100, 10))
       plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', saliency: '+ saliency + ' using ' +saliency_input + 's' )
-      plt.xlabel(metric1)        
-      plt.ylabel(metric2)                                                    
+      plt.xlabel(metric1)
+      plt.ylabel(metric2)
       plt.legend(loc = 'lower left',prop = {'size': 6})
       plt.grid()
-      if args.retrain:
-        plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'-'+metric1+'-'+metric2+'_pruning.pdf', bbox_inches='tight') 
-      elif args.characterise:
-        plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'-'+metric1+'-'+metric2+'_characterise.pdf', bbox_inches='tight') 
-      elif args.input:
-        plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'-'+metric1+'-'+metric2+'_input_sensitivity.pdf', bbox_inches='tight') 
-      else:
-        plt.savefig(args.arch_caffe+'/results/graph/'+saliency_input+'-'+saliency+'-'+metric1+'-'+metric2+'_sensitivity.pdf', bbox_inches='tight')
-
+      plt.savefig(filename_prefix + saliency_input + '-' + saliency + '-' + metric1 + '-' + metric2 + filename_suffix, bbox_inches='tight') 
   for saliency in python_methods:  
     plt.figure()
     for normalisation in normalisations:
@@ -125,20 +127,13 @@ def plot_trend(metric1, metric2):
       else:
         continue
       summary = summary_pruning_strategies[method]
-      plt.plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=method, color=get_color(norm, normalisation))
-    plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', ' + method)
-    plt.xlabel('Sparsity Level in Convolution Layers')        
-    plt.ylabel('Test Set Accuracy')                                                    
+      plt.plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=normalisation, color=get_color('none_norm', normalisation))
+    plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', ' + saliency)
+    plt.xlabel(metric1)
+    plt.ylabel(metric2)
     plt.legend(loc = 'lower left',prop = {'size': 6})
     plt.grid()
-    if args.retrain:
-      plt.savefig(args.arch_caffe+'/results/graph/'+ saliency + '_pruning.pdf', bbox_inches='tight') 
-    elif args.characterise:
-      plt.savefig(args.arch_caffe+'/results/graph/'+ saliency + '_characterise.pdf', bbox_inches='tight') 
-    if args.input:
-      plt.savefig(args.arch_caffe+'/results/graph/'+ saliency + '_input_sensitivity.pdf', bbox_inches='tight') 
-    else:
-      plt.savefig(args.arch_caffe+'/results/graph/'+ saliency +'_sensitivity.pdf', bbox_inches='tight') 
+    plt.savefig(filename_prefix + saliency + '-' + metric1 + '-' + metric2 + filename_suffix, bbox_inches='tight') 
 
 
 to_torch_arch = {'LeNet-5-CIFAR10': 'LeNet_5', 'AlexNet-CIFAR10': 'AlexNet', 'NIN-CIFAR10': 'NIN', 'CIFAR10-CIFAR10': 'CIFAR10', 'SqueezeNet-CIFAR10': 'SqueezeNet'}
