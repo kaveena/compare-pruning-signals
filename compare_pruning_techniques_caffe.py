@@ -18,10 +18,38 @@ _caffe_saliencies_ = caffe._caffe.SALIENCY.names
 _caffe_saliency_input_ = caffe._caffe.SALIENCY_INPUT.names 
 _caffe_saliency_norm_ = caffe._caffe.SALIENCY_NORM.names
 
-l0_normalisation = lambda x, n, m, h, w, c, k, input_type : x/float(c * k * k) if (input_type=="WEIGHT") else x/float(h * w)
-l1_normalisation = lambda x, n, m, h, w, c, k, input_typ : x/float(np.abs(x).sum()) if float(np.abs(x).sum()) != 0 else x
-l2_normalisation = lambda x, n, m, h, w, c, k, input_typ : x/np.sqrt(np.power(x,2).sum()) if float(np.sqrt(np.power(x,2).sum())) != 0 else x
-no_normalisation = lambda x, n, m, h, w, c, k, input_typ : x
+def layerwise_normalisation(x, layer, net):
+  conv_module = net.layer_dict[layer]
+  if args.normalisation == 'l0_normalisation':
+    if args.input_channels_only and (args.saliency_input == 'WEIGHT'):
+      return x / float(conv_module.output_channels * conv_module.kernel_size)
+    elif (args.saliency_input == 'WEIGHT'):
+      return x / float(conv_module.input_channels * conv_module.kernel_size)
+    elif args.input_channels_only:
+      ifm = net.blobs[net.bottom_names[layer][0]]
+      return x / float(conv_module.output_channels * ifm.width * ifm.height)
+    else:
+      ofm = net.blobs[layer]
+      return x / float(conv_module.input_channels * ofm.width * ofm.height)
+  if args.normalisation == 'l0_normalisation_adjusted':
+    if args.input_channels_only and (args.saliency_input == 'WEIGHT'):
+      return x / float(conv_module.active_output_channels.sum() * conv_module.kernel_size)
+    elif (args.saliency_input == 'WEIGHT'):
+      return x / float(conv_module.active_input_channels.sum() * conv_module.kernel_size)
+    elif args.input_channels_only:
+      ifm = net.blobs[net.bottom_names[layer][0]]
+      return x / float(conv_module.active_output_channels.sum() * ifm.width * ifm.height)
+    else:
+      ofm = net.blobs[layer]
+      return x / float(conv_module.active_input_channels.sum() * ofm.width * ofm.height)
+  if args.normalisation == 'weights_removed':
+    return x / float(weights_removed(net, 0, conv_module, args.input_channels_only))
+  elif args.normalisation == 'l1_normalisation':
+    return x/float(np.abs(x).sum()) if float(np.abs(x).sum()) != 0 else x
+  elif args.normalisation == 'l2_normalisation':
+    return x/np.sqrt(np.power(x,2).sum()) if float(np.sqrt(np.power(x,2).sum())) != 0 else x
+  elif args.normalisation == 'no_normalisation':
+    return x
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -71,6 +99,44 @@ def parser():
             help='prune input and output channels')
     return parser
 
+def get_producer_convolution(net, initial_parents, producer_conv): 
+  for initial_parent in initial_parents: 
+    if '_split_' in initial_parent: 
+      split_names = initial_parent.split('_split_') 
+      initial_parent = split_names[0] + '_split' 
+    if ('Convolution' not in net.layer_dict[initial_parent].type) and ('Data' not in net.layer_dict[initial_parent].type): 
+      get_producer_convolution(net, net.bottom_names[initial_parent], producer_conv)
+    else: 
+      producer_conv.append(initial_parent) 
+
+def get_children(net, layer): 
+  children = [] 
+  if '_split_' in layer: 
+    parent_split = layer.split('_split_')[0] + '_split' 
+    next_layers = list(net.layer_dict.keys())[(list(net.layer_dict.keys()).index(parent_split)+1):] 
+  else: 
+    next_layers = list(net.layer_dict.keys())[(list(net.layer_dict.keys()).index(layer)+1):] 
+  for each in next_layers: 
+    if ((layer in net.bottom_names[each]) and (layer not in net.top_names[each])): 
+      children.append(each) 
+   
+  if ((layer in net.top_names.keys() and net.layer_dict[layer].type == 'Split')): 
+    children = list(net.top_names[layer]) 
+  return children
+
+def get_consumer_convolution_or_fc(net, initial_consumers, consumer_sink): 
+  for initial_consumer in initial_consumers: 
+    if '_split_' in initial_consumer: 
+      split_names = initial_consumer.split('_split_') 
+      parent_split = split_names[0] + '_split' 
+      consumer_type = 'Split' 
+    else: 
+      consumer_type = net.layer_dict[initial_consumer].type 
+    if ('Convolution' not in consumer_type) and ('InnerProduct' not in consumer_type): 
+      get_consumer_convolution_or_fc(net, get_children(net, initial_consumer), consumer_sink) 
+    else: 
+      consumer_sink.append(initial_consumer) 
+
 def test(solver, itr):
   accuracy = dict()
   for i in range(itr):
@@ -84,25 +150,62 @@ def test(solver, itr):
     accuracy[j] /= float(itr)
   return accuracy['top-1']*100.0, accuracy['loss']
 
-def UpdateMask(net, pruned_channel, convolution_list, channels, prune=True, final=True, input=False):
+def UpdateMask(net, idx_channel, conv_module, fill, final=True, input=False):
+  if 'Convolution' in conv_module.type:
+    bias = conv_module.bias_term_
+    prune = fill == 0
+    if input:
+      if final and prune:
+        conv_module.blobs[0].data[:,idx_channel,:,:].fill(0)
+      conv_module.blobs[conv_module.mask_pos_].data[:,idx_channel,:,:].fill(fill)
+      conv_module.active_input_channels[idx_channel] = fill
+    else:
+      if final and prune:
+        conv_module.blobs[0].data[idx_channel].fill(0)
+      if final and prune and bias:
+        conv_module.blobs[1].data[idx_channel] = 0
+      conv_module.blobs[conv_module.mask_pos_].data[idx_channel].fill(fill)
+      if bias:
+        conv_module.blobs[conv_module.mask_pos_+1].data[idx_channel] = 0
+        conv_module.active_output_channels[idx_channel] = fill
+
+def PruneChannel(net, pruned_channel, convolution_list, channels, prune=True, final=True, input=False):
   fill = 0 if prune else 1
   idx = np.where(channels>pruned_channel)[0][0]
   idx_convolution = convolution_list[idx]
   idx_channel = (pruned_channel - channels[idx-1]) if idx > 0 else pruned_channel
   conv_module = net.layer_dict[idx_convolution]
-  bias = conv_module.bias_term_
+  UpdateMask(net, idx_channel, conv_module, fill, final, input)
+  if input: # remove previous conv's output channel
+    for c in conv_module.sources:
+      if net.layer_dict[c].type == 'Convolution':
+        UpdateMask(net, idx_channel, net.layer_dict[c], fill, final, input=False)
+  else: # remove next conv's input channel
+    for c in conv_module.sinks:
+      if net.layer_dict[c].type == 'Convolution':
+        UpdateMask(net, idx_channel, net.layer_dict[c], fill, final, input=True)
+
+def weights_removed(net, idx_channel, conv_module, input=False):
+  num_weights = 0
   if input:
-    if final and prune:
-      conv_module.blobs[0].data[:,idx_channel,:,:].fill(0)
-    conv_module.blobs[conv_module.mask_pos_].data[:,idx_channel,:,:].fill(fill)
+    num_weights += (conv_module.active_output_channels.sum() * conv_module.kernel_size)
+    for l in conv_module.sources:
+      c = net.layer_dict[l]
+      if 'Convolution' in c.type:
+        num_weights += (c.active_input_channels.sum() * c.kernel_size)
+        if c.bias_term_:
+          num_weights += 1
   else:
-    if final and prune:
-      conv_module.blobs[0].data[idx_channel].fill(0)
-    if final and prune and bias:
-      conv_module.blobs[1].data[idx_channel] = 0
-    conv_module.blobs[conv_module.mask_pos_].data[idx_channel].fill(fill)
-    if bias:
-      conv_module.blobs[conv_module.mask_pos_+1].data[idx_channel] = 0
+    num_weights += (conv_module.active_input_channels.sum() * conv_module.kernel_size)
+    if conv_module.bias_term_:
+      num_weights += 1
+    for l in conv_module.sinks:
+      c = net.layer_dict[l]
+      if 'Convolution' in c.type:
+        num_weights += (c.active_output_channels.sum() * c.kernel_size)
+      elif 'InnerProduct' in c.type:
+        num_weights += (c.input_size)
+  return num_weights
 
 if __name__=='__main__':
   start = time.time()
@@ -124,9 +227,30 @@ if __name__=='__main__':
   
   #reset mask
   for layer in convolution_list:
-    named_modules[layer].blobs[named_modules[layer].mask_pos_].data.fill(1) # reset saliency
-    if named_modules[layer].bias_term_:
-      named_modules[layer].blobs[named_modules[layer].mask_pos_+1].data.fill(1) # reset saliency
+    conv_module = named_modules[layer]
+    conv_module.blobs[conv_module.mask_pos_].data.fill(1) # reset mask
+    if conv_module.bias_term_:
+      conv_module.blobs[conv_module.mask_pos_+1].data.fill(1) # reset mask
+    conv_module.batch = net.blobs[layer].num
+    conv_module.height = net.blobs[layer].height
+    conv_module.width = net.blobs[layer].width
+    conv_module.output_channels = conv_module.blobs[0].data.shape[0]
+    conv_module.input_channels = conv_module.blobs[0].data.shape[1]
+    conv_module.kernel_size = conv_module.blobs[0].data.shape[2] * conv_module.blobs[0].data.shape[3]
+    conv_module.sources = []
+    conv_module.sinks = []
+    get_producer_convolution(net, net.bottom_names[layer], conv_module.sources)
+    get_consumer_convolution_or_fc(net, get_children(net, layer), conv_module.sinks)
+    input_layer = net.bottom_names[layer][0] 
+    conv_module.group = int(net.blobs[input_layer].channels / conv_module.blobs[0].channels) 
+    conv_module.active_input_channels = np.ones(conv_module.input_channels)
+    conv_module.active_ifm = np.ones(conv_module.input_channels * conv_module.group)
+    conv_module.active_output_channels = np.ones(conv_module.output_channels)
+    for l in conv_module.sinks:
+      if 'InnerProduct' in net.layer_dict[l].type:
+        net.layer_dict[l].input_channels = conv_module.output_channels
+        net.layer_dict[l].input_size = net.layer_dict[l].blobs[0].data.shape[0] / conv_module.output_channels
+        net.layer_dict[l].active_input_channels = np.ones(conv_module.output_channels)
 
   if args.method in _caffe_saliencies_.keys():
     for layer in convolution_list:
@@ -239,18 +363,8 @@ if __name__=='__main__':
               feature_map_name = net.bottom_names[layer][0]
             else:
               feature_map_name = layer
-            caffe_layer = net.blobs[feature_map_name]
-            n = caffe_layer.num
-            m = caffe_layer.channels
-            h = net.blobs[feature_map_name].height
-            w = net.blobs[feature_map_name].width
-            if (args.input_channels_only):
-              c = named_modules[layer].blobs[0].data.shape[0]
-            else:
-              c = named_modules[layer].blobs[0].data.shape[1]
-            k = named_modules[layer].blobs[0].data.shape[2]
-            saliency_data = (net.blobs[feature_map_name].data > 0.0).sum(axis=(0,2,3)) / float(n * h * w)
-            exec('saliency_normalised='+args.normalisation+'(saliency_data, n, m, h , w, c , k, args.saliency_input)')
+            saliency_data = (net.blobs[feature_map_name].data > 0.0).sum(axis=(0,2,3)) / float(conv_module.batch * conv_module.height * conv_module.width)
+            saliency_normalised = layerwise_normalisation(saliency_data, layer, net)
             pruning_signal_partial = np.hstack([pruning_signal_partial, saliency_normalised])
           if iter == 0:
             pruning_signal = pruning_signal_partial.data
@@ -273,22 +387,7 @@ if __name__=='__main__':
           saliency_data = named_modules[layer].blobs[named_modules[layer].saliency_pos_+1].data[0]
         else:
           saliency_data = named_modules[layer].blobs[named_modules[layer].saliency_pos_].data[0]
-        caffe_layer = net.blobs[layer]
-        if args.input_channels_only:
-          feature_map_name = net.bottom_names[layer][0]
-        else:
-          feature_map_name = layer
-        caffe_layer = net.blobs[feature_map_name]
-        n = caffe_layer.num
-        m = caffe_layer.channels
-        h = caffe_layer.height
-        w = caffe_layer.width
-        if (args.input_channels_only):
-          c = named_modules[layer].blobs[0].data.shape[0]
-        else:
-          c = named_modules[layer].blobs[0].data.shape[1]
-        k = named_modules[layer].blobs[0].data.shape[2]
-        exec('saliency_normalised='+args.normalisation+'(saliency_data, n, m, h , w, c , k, args.saliency_input)')
+        saliency_normalised = layerwise_normalisation(saliency_data, layer, net)
         pruning_signal = np.hstack([pruning_signal, saliency_normalised])
     
     if method == 'random':
@@ -297,7 +396,7 @@ if __name__=='__main__':
 
     prune_channel_idx = np.argmin(pruning_signal[active_channel])
     prune_channel = active_channel[prune_channel_idx]
-    UpdateMask(net, prune_channel, convolution_list, channels, final=True, input=args.input_channels_only)
+    PruneChannel(net, prune_channel, convolution_list, channels, final=True, input=args.input_channels_only)
     
     if args.characterise:
       output_train = saliency_solver.net.forward()

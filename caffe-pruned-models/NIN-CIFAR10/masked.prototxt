@@ -1,7 +1,7 @@
 name: "NIN"
 
 layer {
-  name: "cifar"
+  name: "data"
   type: "ImageData"
   top: "data"
   top: "label"
@@ -22,7 +22,7 @@ layer {
 }
 
 layer {
-  name: "cifar"
+  name: "data"
   type: "ImageData"
   top: "data"
   top: "label"
