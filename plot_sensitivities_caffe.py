@@ -84,17 +84,17 @@ def compute_sparsity(summary):
       pruning_itr_sparsity_90 = valid_idx[0]
 
 def plot_trend(metric1, metric2):
-filename_prefix = args.arch_caffe+'/results/graph'
-filename_suffix = '.pdf'
-if args.retrain:
-  filename_suffix = '_pruning' + filename_suffix
-elif args.characterise:
-  filename_suffix = '_characterise' + filename_suffix
-else:
-  filename_suffix = '_sensitivity' + filename_suffix
-if args.input:
-  filename_suffix = '_input' + filename_suffix
-for saliency in caffe_methods:  
+  filename_prefix = args.arch_caffe+'/results/graph/'
+  filename_suffix = '.pdf'
+  if args.retrain:
+    filename_suffix = '_pruning' + filename_suffix
+  elif args.characterise:
+    filename_suffix = '_characterise' + filename_suffix
+  else:
+    filename_suffix = '_sensitivity' + filename_suffix
+  if args.input:
+    filename_suffix = '_input' + filename_suffix
+  for saliency in caffe_methods:  
     for saliency_input in saliency_inputs:
       plt.figure()
       for norm in norms:
@@ -107,9 +107,7 @@ for saliency in caffe_methods:
           plt.plot(summary[metric1][::args.test_interval], summary[metric2][::args.test_interval], label=norm + '-' + normalisation, color = get_color(norm, normalisation))
           gc.collect()
 #      plt.ylim(0, 100.0)
-      plt.ylim(0.1*min(summary[metric2][::args.test_interval]), 1.1*max(summary[metric2][::args.test_interval]))
 #      plt.xlim(0, 100.0)
-      plt.xlim(0.1*min(summary[metric1][::args.test_interval]), 1.1*max(summary[metric1][::args.test_interval]))
 #      plt.xticks(np.arange(0, 100, 10))
 #      plt.yticks(np.arange(0, 100, 10))
       plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', saliency: '+ saliency + ' using ' +saliency_input + 's' )
@@ -204,7 +202,7 @@ initial_num_param = initial_conv_param + initial_fc_param
 caffe_methods = ['fisher', 'hessian_diag', 'hessian_diag_approx2', 'taylor_2nd', 'taylor_2nd_approx2', 'taylor', 'weight_avg', 'diff_avg']
 python_methods = ['apoz']
 norms = ['l1_norm', 'l2_norm', 'none_norm']
-normalisations = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_normalisation']
+normalisations = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_normalisation', 'l0_normalisation_adjusted', 'weights_removed']
 saliency_inputs = ['weight', 'activation']
 
 all_methods = []
@@ -222,15 +220,18 @@ for method in python_methods:
 all_methods.append('random')
 
 methods = list(all_methods)
+filename_prefix = args.arch_caffe + '/results/prune/summary_'
+filename_suffix = '_caffe.npy'
+if args.retrain:
+  filename_prefix = filename_prefix + 'characterise_'
+elif args.characterise:
+  filename_prefix = filename_prefix + 'retrain_'
+else:
+  filename_prefix = filename_prefix + 'sensitivity_'
+if args.input:
+  filename_prefix = filename_prefix + 'input_channels_'
 for method in all_methods:
-  if args.retrain:
-    summary_file = args.arch_caffe+'/results/prune/summary_retrain_'+method+'_caffe.npy'
-  if args.characterise:
-    summary_file = args.arch_caffe+'/results/prune/summary_characterise_'+method+'_caffe.npy'
-  elif args.input:
-    summary_file = args.arch_caffe+'/results/prune/summary_input_channels_'+method+'_caffe.npy'
-  else:
-    summary_file = args.arch_caffe+'/results/prune/summary_'+method+'_caffe.npy'
+  summary_file = filename_prefix + method + filename_suffix
   if os.path.isfile(summary_file):
     summary_pruning_strategies[method] = dict(np.load(summary_file).item()) 
   else:
