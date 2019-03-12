@@ -204,7 +204,7 @@ def weights_removed(net, idx_channel, conv_module, input=False):
       if 'Convolution' in c.type:
         num_weights += (c.active_output_channels.sum() * c.kernel_size)
       elif 'InnerProduct' in c.type:
-        num_weights += (c.input_size)
+        num_weights += (c.input_size * c.output_size)
   return num_weights
 
 if __name__=='__main__':
@@ -250,6 +250,7 @@ if __name__=='__main__':
       if 'InnerProduct' in net.layer_dict[l].type:
         net.layer_dict[l].input_channels = conv_module.output_channels
         net.layer_dict[l].input_size = net.layer_dict[l].blobs[0].data.shape[0] / conv_module.output_channels
+        net.layer_dict[l].output_size = net.layer_dict[l].blobs[0].data.shape[1]
         net.layer_dict[l].active_input_channels = np.ones(conv_module.output_channels)
 
   if args.method in _caffe_saliencies_.keys():
@@ -296,6 +297,7 @@ if __name__=='__main__':
   summary['initial_test_loss'] = ce_loss
   summary['eval_loss'] = np.zeros(total_channels)
   summary['eval_acc'] = np.zeros(total_channels)
+  summary['predicted_eval_loss'] = np.zeros(total_channels)
   initial_eval_loss = 0.0
   initial_eval_acc = 0.0
   for i in range(100):
@@ -431,6 +433,7 @@ if __name__=='__main__':
     summary['test_acc'][j] = test_acc
     summary['test_loss'][j] = ce_loss
     summary['pruned_channel'][j] = prune_channel
+    summary['predicted_eval_loss'][j] = (pruning_signal[active_channel])[prune_channel_idx]
     print(args.normalisation, method, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
     active_channel.remove(prune_channel)
     
