@@ -99,13 +99,16 @@ def parser():
             help='prune input and output channels')
     return parser
 
-def get_producer_convolution(net, initial_parents, producer_conv): 
-  for initial_parent in initial_parents: 
+def get_producer_convolution(net, initial_parents, producer_conv, conv_type, conv_index): 
+  for i in range(len(initial_parents)): 
+    initial_parent = initial_parents[i] 
     if '_split_' in initial_parent: 
       split_names = initial_parent.split('_split_') 
       initial_parent = split_names[0] + '_split' 
+      conv_type.append('Split') 
     if ('Convolution' not in net.layer_dict[initial_parent].type) and ('Data' not in net.layer_dict[initial_parent].type): 
-      get_producer_convolution(net, net.bottom_names[initial_parent], producer_conv)
+      get_producer_convolution(net, net.bottom_names[initial_parent], producer_conv, conv_type,
+ conv_index) 
     else: 
       producer_conv.append(initial_parent) 
 
@@ -113,29 +116,40 @@ def get_children(net, layer):
   children = [] 
   if '_split_' in layer: 
     parent_split = layer.split('_split_')[0] + '_split' 
-    next_layers = list(net.layer_dict.keys())[(list(net.layer_dict.keys()).index(parent_split)+1):] 
+    next_layers = list(net.layer_dict.keys())[(list(net.layer_dict.keys()).index(parent_split)+
+1):] 
   else: 
     next_layers = list(net.layer_dict.keys())[(list(net.layer_dict.keys()).index(layer)+1):] 
   for each in next_layers: 
     if ((layer in net.bottom_names[each]) and (layer not in net.top_names[each])): 
       children.append(each) 
-   
+ 
   if ((layer in net.top_names.keys() and net.layer_dict[layer].type == 'Split')): 
     children = list(net.top_names[layer]) 
-  return children
+  return children 
 
-def get_consumer_convolution_or_fc(net, initial_consumers, consumer_sink): 
-  for initial_consumer in initial_consumers: 
+def get_consumer_convolution_or_fc(net, initial_consumers, consumer_sink, junction_type, conv_index, previous_layer): 
+  for i in range(len(initial_consumers)): 
+    initial_consumer = initial_consumers[i] 
     if '_split_' in initial_consumer: 
       split_names = initial_consumer.split('_split_') 
       parent_split = split_names[0] + '_split' 
       consumer_type = 'Split' 
     else: 
       consumer_type = net.layer_dict[initial_consumer].type 
+    if consumer_type == 'Concat': 
+        junction_type.append('Concat') 
+        conv_index.append(net.bottom_names[initial_consumer].index(previous_layer)) 
     if ('Convolution' not in consumer_type) and ('InnerProduct' not in consumer_type): 
-      get_consumer_convolution_or_fc(net, get_children(net, initial_consumer), consumer_sink) 
+      get_consumer_convolution_or_fc(net, get_children(net, initial_consumer), consumer_sink, junction_type, conv_index, initial_consumer) 
     else: 
       consumer_sink.append(initial_consumer) 
+
+def get_sources(net, conv, producer_conv, conv_type, conv_index): 
+  get_producer_convolution(net, net.bottom_names[conv], producer_conv, conv_type, conv_index)
+ 
+def get_sinks(net, conv, consumer_conv, conv_type, conv_index): 
+  get_consumer_convolution_or_fc(net, get_children(net, layer), consumer_conv, conv_type, conv_index, conv) 
 
 def test(solver, itr):
   accuracy = dict()
@@ -155,10 +169,23 @@ def UpdateMask(net, idx_channel, conv_module, fill, final=True, input=False):
     bias = conv_module.bias_term_
     prune = fill == 0
     if input:
-      if final and prune:
-        conv_module.blobs[0].data[:,idx_channel,:,:].fill(0)
-      conv_module.blobs[conv_module.mask_pos_].data[:,idx_channel,:,:].fill(fill)
-      conv_module.active_input_channels[idx_channel] = fill
+      conv_module.active_ifm[idx_channel] = fill
+      if conv_module.group == 1:
+        if final and prune: 
+          conv_module.blobs[0].data[:,idx_channel,:,:].fill(0)
+        conv_module.blobs[conv_module.mask_pos_].data[:,idx_channel,:,:].fill(fill)
+        conv_module.active_input_channels[idx_channel] = fill
+      else:
+        can_prune = True
+        for g in range(len(conv_module.groups)):
+          if (conv_module.active_ifm[g*(conv_module.input_channels) + idx_channel] != 0) and prune:
+            can_prune = False
+        if can_prune:
+          weight_index = idx_channel / conv_module.group
+          if final and prune: 
+            conv_module.blobs[0].data[:,weight_index,:,:].fill(0)
+          conv_module.blobs[conv_module.mask_pos_].data[:,weight_index,:,:].fill(fill)
+          conv_module.active_input_channels[weight_index] = fill
     else:
       if final and prune:
         conv_module.blobs[0].data[idx_channel].fill(0)
@@ -181,8 +208,18 @@ def PruneChannel(net, pruned_channel, convolution_list, channels, prune=True, fi
       if net.layer_dict[c].type == 'Convolution':
         UpdateMask(net, idx_channel, net.layer_dict[c], fill, final, input=False)
   else: # remove next conv's input channel
-    for c in conv_module.sinks:
+    for i in range(len(conv_module.sinks)):
+      c = conv_module.sinks[i]
       if net.layer_dict[c].type == 'Convolution':
+        if len(conv_module.sink_junction_type) == len(conv_module.sinks):
+          if conv_module.sink_junction_type[i] == 'Concat':
+            c_offset = 0
+            for j in range(len(c.sources)):
+              if c.sources[j] == c:
+                break
+              c_offset += layer_dict[c.sources[j]].output_channels
+            UpdateMask(net, idx_channel + c_offset, net.layer_dict[c], fill, final, input=True)
+            
         UpdateMask(net, idx_channel, net.layer_dict[c], fill, final, input=True)
 
 def weights_removed(net, idx_channel, conv_module, input=False):
@@ -239,8 +276,12 @@ if __name__=='__main__':
     conv_module.kernel_size = conv_module.blobs[0].data.shape[2] * conv_module.blobs[0].data.shape[3]
     conv_module.sources = []
     conv_module.sinks = []
-    get_producer_convolution(net, net.bottom_names[layer], conv_module.sources)
-    get_consumer_convolution_or_fc(net, get_children(net, layer), conv_module.sinks)
+    conv_module.source_junction_type = []
+    conv_module.sink_junction_type = []
+    conv_module.source_conv_index = []
+    conv_module.sink_conv_index = []
+    get_sources(net, layer, conv_module.sources, conv_module.source_junction_type, conv_module.source_conv_index)
+    get_sinks(net, layer, conv_module.sinks, conv_module.sink_junction_type, conv_module.sink_conv_index)
     input_layer = net.bottom_names[layer][0] 
     conv_module.group = int(net.blobs[input_layer].channels / conv_module.blobs[0].channels) 
     conv_module.active_input_channels = np.ones(conv_module.input_channels)

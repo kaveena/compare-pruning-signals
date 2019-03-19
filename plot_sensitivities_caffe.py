@@ -13,6 +13,9 @@ from functools import reduce
 import sys
 import gc
 
+global_initial_test_acc = 0.0
+global_num_test_acc_sample = 0
+
 def compute_sparsity(summary):
     # Bound test accuracy 
     test_acc = summary['test_acc']
@@ -41,6 +44,10 @@ def compute_sparsity(summary):
 #    axes.plot(test_acc, label=method)
     summary['test_acc'] = test_acc
     summary['sparsity'] = sparsity
+    global global_initial_test_acc
+    global global_num_test_acc_sample
+    global_initial_test_acc += summary['initial_test_acc']
+    global_num_test_acc_sample += 1
     if 'initial_test_loss' in summary.keys():
       summary['test_loss'] = np.hstack([summary['initial_test_loss'], summary['test_loss']])
     if 'initial_train_loss' in summary.keys():
@@ -104,7 +111,20 @@ def plot_trend(metric1, metric2):
             summary = summary_pruning_strategies[method]
           else:
             continue
+          summary['test_acc'][0] = global_initial_test_acc
           plt.plot(summary[metric1][::args.test_interval], summary[metric2][::args.test_interval], label=norm + '-' + normalisation, color = get_color(norm, normalisation))
+          # sparsity at 0.1% test_acc tolerance
+          valid_idx = np.where(summary['test_acc'] >= 0.999*global_initial_test_acc)[0]
+          pruning_itr_test_acc_01 = valid_idx[len(valid_idx)-1]
+          # sparsity at 1% test_acc tolerance
+          valid_idx = np.where(summary['test_acc'] >= 0.99*global_initial_test_acc)[0]
+          pruning_itr_test_acc_1 = valid_idx[len(valid_idx)-1]
+          # sparsity at 2% test_acc tolerance
+          valid_idx = np.where(summary['test_acc'] >= 0.98*global_initial_test_acc)[0]
+          pruning_itr_test_acc_2 = valid_idx[len(valid_idx)-1]
+          plt.plot(summary[metric1][pruning_itr_test_acc_01], summary[metric2][pruning_itr_test_acc_01], color = get_color(norm, normalisation), marker = 'o')
+          plt.plot(summary[metric1][pruning_itr_test_acc_1], summary[metric2][pruning_itr_test_acc_1], color = get_color(norm, normalisation), marker = 'v')
+          plt.plot(summary[metric1][pruning_itr_test_acc_2], summary[metric2][pruning_itr_test_acc_2], color = get_color(norm, normalisation), marker = '^')
           gc.collect()
 #      plt.ylim(0, 100.0)
 #      plt.xlim(0, 100.0)
@@ -124,6 +144,7 @@ def plot_trend(metric1, metric2):
         summary = summary_pruning_strategies[method]
       else:
         continue
+      summary['test_acc'][0] = global_initial_test_acc
       summary = summary_pruning_strategies[method]
       plt.plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=normalisation, color=get_color('none_norm', normalisation))
     plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', ' + saliency)
@@ -223,9 +244,9 @@ methods = list(all_methods)
 filename_prefix = args.arch_caffe + '/results/prune/summary_'
 filename_suffix = '_caffe.npy'
 if args.retrain:
-  filename_prefix = filename_prefix + 'characterise_'
-elif args.characterise:
   filename_prefix = filename_prefix + 'retrain_'
+elif args.characterise:
+  filename_prefix = filename_prefix + 'characterise_'
 else:
   filename_prefix = filename_prefix + 'sensitivity_'
 if args.input:
@@ -247,6 +268,8 @@ for i in range(len(all_pruning)):
     if method not in summary_pruning_strategies.keys():
         continue 
     compute_sparsity(summary_pruning_strategies[method])
+
+global_initial_test_acc /= float(global_num_test_acc_sample)
 
 plot_trend(args.metric1, args.metric2)
 
