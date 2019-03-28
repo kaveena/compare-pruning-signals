@@ -109,13 +109,15 @@ def correct_sparsity(summary, convolution_list, graph, channels, arch, total_cha
   list_modules = graph.node_lut
   graph.compute_output_shapes()
   initial_conv_param, initial_fc_param = compute_num_param(list_modules)
-  new_num_param = np.zeros(total_channels)
+  new_conv_param = np.zeros(total_channels)
+  new_fc_param = np.zeros(total_channels)
   for i in range(total_channels):
     remove_channel(summary['pruned_channel'][i], convolution_list, channels, list_modules, input)
     graph.compute_output_shapes()
     update_param_shape(list_modules)
     conv_param, fc_param = compute_num_param(list_modules)
-    new_num_param[i] = conv_param
+    new_conv_param[i] = conv_param
+    new_fc_param[i] = fc_param
     if (stop_itr>0) and (i==stop_itr):
       break 
-  return new_num_param  
+  return new_conv_param, new_fc_param

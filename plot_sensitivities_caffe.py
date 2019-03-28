@@ -35,15 +35,18 @@ def compute_sparsity(summary):
       if original_list_modules[l].data is not None:
         list_modules[l].params_shape = original_list_modules[l].params_shape.copy()
     
-    new_num_param = correct_sparsity(summary, convolution_list, graph, channels, args.arch, total_channels, stop_itr=idx_test, input=args.input)
+    new_conv_param, new_fc_param = correct_sparsity(summary, convolution_list, graph, channels, args.arch, total_channels, stop_itr=idx_test, input=args.input)
     
-    sparsity = 100 - 100 *(new_num_param.astype(float) / initial_conv_param )
+    sparsity = 100 - 100 *(new_conv_param.astype(float) / initial_conv_param )
+    overall_sparsity = 100 - 100 *((new_conv_param + new_fc_param).astype(float) / initial_num_param )
     # Add data for unpruned network
     test_acc = np.hstack([summary['initial_test_acc'], test_acc])
     sparsity = np.hstack([0.0, sparsity])
+    overall_sparsity = np.hstack([0.0, overall_sparsity])
 #    axes.plot(test_acc, label=method)
     summary['test_acc'] = test_acc
     summary['sparsity'] = sparsity
+    summary['overall_sparsity'] = overall_sparsity
     global global_initial_test_acc
     global global_num_test_acc_sample
     global_initial_test_acc += summary['initial_test_acc']
@@ -122,9 +125,7 @@ def plot_trend(metric1, metric2):
           # sparsity at 2% test_acc tolerance
           valid_idx = np.where(summary['test_acc'] >= 0.98*global_initial_test_acc)[0]
           pruning_itr_test_acc_2 = valid_idx[len(valid_idx)-1]
-          plt.plot(summary[metric1][pruning_itr_test_acc_01], summary[metric2][pruning_itr_test_acc_01], color = get_color(norm, normalisation), marker = 'o')
           plt.plot(summary[metric1][pruning_itr_test_acc_1], summary[metric2][pruning_itr_test_acc_1], color = get_color(norm, normalisation), marker = 'v')
-          plt.plot(summary[metric1][pruning_itr_test_acc_2], summary[metric2][pruning_itr_test_acc_2], color = get_color(norm, normalisation), marker = '^')
           gc.collect()
 #      plt.ylim(0, 100.0)
 #      plt.xlim(0, 100.0)
