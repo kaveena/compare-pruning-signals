@@ -18,6 +18,10 @@ from collections import namedtuple
 global_initial_test_acc = 0.0
 global_num_test_acc_samples = 0
 
+def ensure_dir(file_path):
+  directory = os.path.dirname(file_path)
+  if not os.path.exists(directory):
+    os.makedirs(directory)
 
 def get_info(method):
   if method == 'random':
@@ -57,10 +61,6 @@ def compute_sparsity(summary_dict, summary_method, characterise):
   test_acc = np.hstack([summary['initial_test_acc'], test_acc])
   sparsity = np.hstack([0.0, sparsity])
   overall_sparsity = np.hstack([0.0, overall_sparsity])
-  global global_initial_test_acc
-  global global_num_test_acc_samples
-  global_initial_test_acc += summary['initial_test_acc']
-  global_num_test_acc_samples += 1
 #  axes.plot(test_acc, label=method)
   summary['test_acc'] = test_acc
   summary['sparsity'] = sparsity
@@ -79,6 +79,24 @@ def compute_sparsity(summary_dict, summary_method, characterise):
     summary['train_acc'] = np.hstack([summary['initial_train_acc'], summary['train_acc']])
   if  not ('train_loss' in summary.keys() and ('retraining_loss' in summary.keys())) and ('characterise' in summary_method):
     print(summary_method + ' has no train loss')
+  csv_prefix = args.arch_caffe + '/results/csv/'
+  ensure_dir(csv_prefix)
+  if '_characterise' in summary_method:
+    csv_prefix = csv_prefix + 'characterise/'
+    save_method = summary_method.replace('_characterise', '')
+  else: 
+    csv_prefix = csv_prefix + 'sensitivity/'
+    save_method = summary_method
+  ensure_dir(csv_prefix)
+  test_acc_to_save = np.hstack([summary['test_acc'][0], summary['test_acc'][1::args.test_interval]])
+  sparsity_to_save = np.hstack([summary['sparsity'][0], summary['sparsity'][1::args.test_interval]])
+  overall_sparsity_to_save = np.hstack([summary['overall_sparsity'][0], summary['overall_sparsity'][1::args.test_interval]])
+  csv_test_acc_sparsity = pd.DataFrame(data = np.stack([test_acc_to_save, sparsity_to_save]).transpose(), columns=['test_acc', 'sparsity'])
+  csv_test_acc_overall_sparsity = pd.DataFrame(data = np.stack([test_acc_to_save, overall_sparsity_to_save]).transpose(), columns=['test_acc', 'overall_sparsity'])
+  ensure_dir(csv_prefix + '/test_acc-sparsity/')
+  csv_test_acc_sparsity.to_csv(csv_prefix + '/test_acc-sparsity/' + save_method)
+  ensure_dir(csv_prefix + '/test_acc-overall_sparsity/')
+  csv_test_acc_overall_sparsity.to_csv(csv_prefix + '/test_acc-overall_sparsity/' + save_method)
   
 def extract_points(summary_dict, summary_method, characterise):
   summary = summary_dict[summary_method]
@@ -252,7 +270,7 @@ all_pruning = list(set(methods))
 column_names = ['network', \
 'name', \
 'saliency_input', \
-'method', \
+'saliency_method', \
 'saliency_norm', \
 'layerwise_normalisation', \
 'initial_test_accuracy', \
@@ -390,6 +408,17 @@ column_names = ['network', \
 
 df = pd.DataFrame(columns=column_names)
 
+global_initial_test_acc = 0.0
+global_num_test_acc_samples = 0
+for method in summary_pruning_strategies.keys():
+  global_initial_test_acc += summary_pruning_strategies[method]['initial_test_acc']
+  global_num_test_acc_samples += 1
+
+global_initial_test_acc = global_initial_test_acc / float(global_num_test_acc_samples)
+
+for method in summary_pruning_strategies.keys():
+  summary_pruning_strategies[method]['initial_test_acc'] = global_initial_test_acc
+
 for i in range(len(all_pruning)):
   method = all_pruning[i]
   if method not in summary_pruning_strategies.keys():
@@ -399,7 +428,6 @@ for i in range(len(all_pruning)):
   compute_sparsity(summary_pruning_strategies, method, False)
   compute_sparsity(summary_pruning_strategies, method + '_characterise', True)
 
-global_initial_test_acc = global_initial_test_acc / float(global_num_test_acc_samples)
 
 for i in range(len(all_pruning)):
   method = all_pruning[i]

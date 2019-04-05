@@ -69,11 +69,34 @@ weight_avg_caffe = dict()
 diff_avg = dict()
 diff_avg_caffe = dict()
 
+for k in convolution_list:
+  named_modules[k].saliency_ = caffe._caffe.SALIENCY.TAYLOR
+  named_modules[k].saliency_norm_ = caffe._caffe.SALIENCY_NORM.SQR_SUM
+  named_modules[k].blobs[named_modules[k].saliency_pos_].data.fill(0)
+
+net.clear_param_diffs();
+
+fisher_correct = True
+
+# compute saliency    
+evalset_size = 1;
+for iter in range(evalset_size):
+  net.forward()
+  net.backward()
+
+#   print("Check Fisher Info")
+for k in convolution_list:
+   fisher_caffe[k] = named_modules[k].blobs[named_modules[k].saliency_pos_].data[0] / 2.0
+   fisher[k] = ((net.blobs[k].data * net.blobs[k].diff * net.blobs[k].num ).sum(axis=(2,3)) ** 2).sum(axis=0) / (2*net.blobs[k].num)
+   fisher_correct*=np.allclose(fisher_caffe[k], fisher[k])
+print("FISHER OK" if fisher_correct else "FISHER KO")
+
 for saliency in caffe._caffe.SALIENCY.names.values():
   if (saliency == caffe._caffe.SALIENCY.ALL):
     continue
   for k in convolution_list:
     named_modules[k].saliency_ = saliency
+    named_modules[k].saliency_norm_ = caffe._caffe.SALIENCY_NORM.NONE
     named_modules[k].blobs[named_modules[k].saliency_pos_].data.fill(0)
 
   net.clear_param_diffs();
@@ -139,23 +162,20 @@ for saliency in caffe._caffe.SALIENCY.names.values():
     diff_avg[k] = net.blobs[k].diff.sum(axis=(0,2,3))
     diff_avg_correct*=(np.allclose(diff_avg_caffe[k], diff_avg[k], rtol=1e-3))
   
-  print(saliency)
-  if (fisher_correct):
-    print("Fisher")
-  if (taylor_correct):
-    print("Taylor")
-  if (hessian_diag_correct):
-    print("Hessian Diag")
-  if (hessian_diag_approx2_correct):
-    print("Hessian Diag Approx2")
-  if (taylor_2nd_correct):
-    print("Taylor 2nd")
-  if (taylor_2nd_approx2_correct):
-    print("Taylor 2nd Approx2")
-  if (weight_avg_correct):
-    print("Weight Avg")
-  if (diff_avg_correct):
-    print("Diff Avg")
+  if (saliency==caffe._caffe.SALIENCY.TAYLOR):
+    print("TAYLOR OK" if taylor_correct else "TAYLOR KO")
+  if (saliency==caffe._caffe.SALIENCY.HESSIAN_DIAG):
+    print("HESSIAN_DIAG OK" if hessian_diag_correct else "HESSIAN_DIAG KO")
+  if (saliency==caffe._caffe.SALIENCY.HESSIAN_DIAG_APPROX2):
+    print("HESSIAN_DIAG_APPROX2 OK" if hessian_diag_approx2_correct else "HESSIAN_DIAG_APPROX2 KO")
+  if (saliency==caffe._caffe.SALIENCY.TAYLOR_2ND):
+    print("TAYLOR_2ND OK" if taylor_2nd_correct else "TAYLOR_2ND KO")
+  if (saliency==caffe._caffe.SALIENCY.TAYLOR_2ND_APPROX2):
+    print("TAYLOR_2ND_APPROX2 OK" if taylor_2nd_approx2_correct else "TAYLOR_2ND_APPROX2 KO")
+  if (saliency==caffe._caffe.SALIENCY.WEIGHT_AVG):
+    print("WEIGHT_AVG OK" if weight_avg_correct else "WEIGHT_AVG KO")
+  if (saliency==caffe._caffe.SALIENCY.DIFF_AVG):
+    print("DIFF_AVG OK" if diff_avg_correct else "DIFF_AVG KO")
 
 # Weight based 
 for k in convolution_list:
@@ -234,23 +254,20 @@ for saliency in caffe._caffe.SALIENCY.names.values():
     diff_avg[k] = named_modules[k].blobs[0].diff.sum(axis=(1,2,3)) + named_modules[k].blobs[1].diff
     diff_avg_correct*=(np.allclose(diff_avg_caffe[k], diff_avg[k], rtol=1e-3))
   
-  print(saliency)
-  if (fisher_correct):
-    print("Fisher")
-  if (taylor_correct):
-    print("Taylor")
-  if (hessian_diag_correct):
-    print("Hessian Diag")
-  if (hessian_diag_approx2_correct):
-    print("Hessian Diag Approx2")
-  if (taylor_2nd_correct):
-    print("Taylor 2nd")
-  if (taylor_2nd_approx2_correct):
-    print("Taylor 2nd Approx2")
-  if (weight_avg_correct):
-    print("Weight Avg")
-  if (diff_avg_correct):
-    print("Diff Avg")
+  if (saliency==caffe._caffe.SALIENCY.TAYLOR):
+    print("TAYLOR OK" if taylor_correct else "TAYLOR KO")
+  if (saliency==caffe._caffe.SALIENCY.HESSIAN_DIAG):
+    print("HESSIAN_DIAG OK" if hessian_diag_correct else "HESSIAN_DIAG KO")
+  if (saliency==caffe._caffe.SALIENCY.HESSIAN_DIAG_APPROX2):
+    print("HESSIAN_DIAG_APPROX2 OK" if hessian_diag_approx2_correct else "HESSIAN_DIAG_APPROX2 KO")
+  if (saliency==caffe._caffe.SALIENCY.TAYLOR_2ND):
+    print("TAYLOR_2ND OK" if taylor_2nd_correct else "TAYLOR_2ND KO")
+  if (saliency==caffe._caffe.SALIENCY.TAYLOR_2ND_APPROX2):
+    print("TAYLOR_2ND_APPROX2 OK" if taylor_2nd_approx2_correct else "TAYLOR_2ND_APPROX2 KO")
+  if (saliency==caffe._caffe.SALIENCY.WEIGHT_AVG):
+    print("WEIGHT_AVG OK" if weight_avg_correct else "WEIGHT_AVG KO")
+  if (saliency==caffe._caffe.SALIENCY.DIFF_AVG):
+    print("DIFF_AVG OK" if diff_avg_correct else "DIFF_AVG KO")
   
 """  
 for k in convolution_list:
