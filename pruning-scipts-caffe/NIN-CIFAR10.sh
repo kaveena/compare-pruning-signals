@@ -1,9 +1,9 @@
 #! /bin/bash
 arch=NIN-CIFAR10
-train_size=20
+train_size=25
 eval_size=10
-test_size=40
-test_interval=50
+test_size=10
+test_interval=1
 tolerance=10.0
 caffe_models=caffe-pruned-models
 cifar10_data=../caffe-cifar-10-training
