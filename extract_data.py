@@ -84,19 +84,66 @@ def compute_sparsity(summary_dict, summary_method, characterise):
   if '_characterise' in summary_method:
     csv_prefix = csv_prefix + 'characterise/'
     save_method = summary_method.replace('_characterise', '')
+    training_iterations = np.zeros(total_channels)
+    training_loss = np.array([])
+    for j in range(total_channels):
+      if summary['train_loss'][j] > 0:
+        training_iterations[j] = len(summary['retraining_loss'][j]) if summary['retraining_loss'][j] is not None else 0
+        training_loss = np.hstack([training_loss, summary['train_loss'][j], summary['retraining_loss'][j]])
+    summary['training_iterations'] = np.hstack([0,np.cumsum(training_iterations)])
   else: 
+    summary['train_loss'] = np.zeros(len(summary['test_acc']))
+    summary['train_acc'] = np.zeros(len(summary['test_acc']))
+    summary['training_iterations'] = np.zeros(len(summary['test_acc']))
     csv_prefix = csv_prefix + 'sensitivity/'
     save_method = summary_method
   ensure_dir(csv_prefix)
+  summary['pruning_iterations'] = np.arange(len(summary['test_acc']))
   test_acc_to_save = np.hstack([summary['test_acc'][0], summary['test_acc'][1::args.test_interval]])
+  test_loss_to_save = np.hstack([summary['test_loss'][0], summary['test_loss'][1::args.test_interval]])
+  train_acc_to_save = np.hstack([summary['train_acc'][0], summary['train_acc'][1::args.test_interval]])
+  train_loss_to_save = np.hstack([summary['train_loss'][0], summary['train_loss'][1::args.test_interval]])
+  eval_acc_to_save = np.hstack([summary['eval_acc'][0], summary['eval_acc'][1::args.test_interval]])
+  eval_loss_to_save = np.hstack([summary['eval_loss'][0], summary['eval_loss'][1::args.test_interval]])
   sparsity_to_save = np.hstack([summary['sparsity'][0], summary['sparsity'][1::args.test_interval]])
   overall_sparsity_to_save = np.hstack([summary['overall_sparsity'][0], summary['overall_sparsity'][1::args.test_interval]])
-  csv_test_acc_sparsity = pd.DataFrame(data = np.stack([test_acc_to_save, sparsity_to_save]).transpose(), columns=['test_acc', 'sparsity'])
-  csv_test_acc_overall_sparsity = pd.DataFrame(data = np.stack([test_acc_to_save, overall_sparsity_to_save]).transpose(), columns=['test_acc', 'overall_sparsity'])
-  ensure_dir(csv_prefix + '/test_acc-sparsity/')
-  csv_test_acc_sparsity.to_csv(csv_prefix + '/test_acc-sparsity/' + save_method)
-  ensure_dir(csv_prefix + '/test_acc-overall_sparsity/')
-  csv_test_acc_overall_sparsity.to_csv(csv_prefix + '/test_acc-overall_sparsity/' + save_method)
+  training_iterations_to_save = np.hstack([summary['training_iterations'][0], summary['training_iterations'][1::args.test_interval]])
+  pruning_iterations_to_save = np.hstack([summary['pruning_iterations'][0], summary['pruning_iterations'][1::args.test_interval]])
+  
+  num_conv_param_to_save = np.hstack([initial_conv_param, new_conv_param[0::args.test_interval]])
+  num_fc_param_to_save = np.hstack([initial_fc_param, new_fc_param[0::args.test_interval]])
+  num_param_to_save = num_conv_param_to_save + num_fc_param_to_save
+  
+  csv_ = pd.DataFrame(data = np.stack([ pruning_iterations_to_save, \
+                                        test_acc_to_save, \
+                                        sparsity_to_save, \
+                                        overall_sparsity_to_save, \
+                                        num_param_to_save, 
+                                        num_conv_param_to_save, \
+                                        num_fc_param_to_save, \
+                                        test_loss_to_save, \
+                                        eval_acc_to_save, \
+                                        eval_loss_to_save, \
+                                        train_acc_to_save, \
+                                        train_loss_to_save, \
+                                        training_iterations_to_save \
+                                        ]).transpose(), \
+                      columns=[         'pruning_iterations', \
+                                        'test_acc', \
+                                        'sparsity', \
+                                        'overall_sparsity', \
+                                        'num_param', \
+                                        'conv_param', \
+                                        'fc_param', \
+                                        'test_loss', \
+                                        'eval_acc', \
+                                        'eval_loss', \
+                                        'train_acc', \
+                                        'train_loss', \
+                                        'training_iterations', \
+                                        ])
+  ensure_dir(csv_prefix)
+  csv_.to_csv(csv_prefix + save_method)
   
 def extract_points(summary_dict, summary_method, characterise):
   summary = summary_dict[summary_method]
@@ -149,14 +196,6 @@ def extract_points(summary_dict, summary_method, characterise):
   # 90% sparsity
   valid_idx = np.where(summary['sparsity'] >= 0.90)[0]
   pruning_itr_sparsity_90 = valid_idx[0]
-  if characterise:
-    training_iterations = np.zeros(total_channels)
-    training_loss = np.array([])
-    for j in range(total_channels):
-      if summary['train_loss'][j] > 0:
-        training_iterations[j] = len(summary['retraining_loss'][j]) if summary['retraining_loss'][j] is not None else 0
-        training_loss = np.hstack([training_loss, summary['train_loss'][j], summary['retraining_loss'][j]])
-    summary['training_iterations'] = np.hstack([0,np.cumsum(training_iterations)])
   return pruning_itr_test_acc_max, pruning_itr_test_acc_01, pruning_itr_test_acc_1, pruning_itr_test_acc_2, pruning_itr_test_acc_5, pruning_itr_test_acc_abs_01, pruning_itr_test_acc_abs_1, pruning_itr_test_acc_abs_2, pruning_itr_test_acc_abs_5, pruning_itr_sparsity_50, pruning_itr_sparsity_60, pruning_itr_sparsity_70, pruning_itr_sparsity_80, pruning_itr_sparsity_90
 
 to_torch_arch = {'LeNet-5-CIFAR10': 'LeNet_5', 'AlexNet-CIFAR10': 'AlexNet', 'NIN-CIFAR10': 'NIN', 'CIFAR10-CIFAR10': 'CIFAR10', 'SqueezeNet-CIFAR10': 'SqueezeNet'}
@@ -222,9 +261,9 @@ initial_conv_param, initial_fc_param = compute_num_param(original_list_modules)
 initial_num_param = initial_conv_param + initial_fc_param
 
 
-caffe_methods = ['fisher', 'hessian_diag', 'hessian_diag_approx2', 'taylor_2nd', 'taylor_2nd_approx2', 'taylor', 'weight_avg', 'diff_avg']
+caffe_methods = ['hessian_diag', 'hessian_diag_approx2', 'taylor_2nd', 'taylor_2nd_approx2', 'taylor', 'weight_avg', 'diff_avg']
 python_methods = ['apoz']
-norms = ['l1_norm', 'l2_norm', 'none_norm']
+norms = ['l1_norm', 'l2_norm', 'none_norm', 'abs_sum_norm', 'sqr_sum_norm']
 normalisations = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_normalisation', 'l0_normalisation_adjusted', 'weights_removed']
 saliency_inputs = ['weight', 'activation']
 
@@ -443,7 +482,7 @@ for i in range(len(all_pruning)):
     'network': args.arch_caffe,
     'name': method,
     'saliency_input': saliency_input,
-    'method': saliency_method,
+    'saliency_method': saliency_method,
     'saliency_norm': saliency_norm,
     'layerwise_normalisation': normalisation,
     'initial_test_acc': global_initial_test_acc,

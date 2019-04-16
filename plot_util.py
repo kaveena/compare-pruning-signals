@@ -24,9 +24,11 @@ def choose_linewidth(method):
 def get_color(norm, normalisation):
   plot_colors = dict()
   norm_to_int = {'no_normalisation':0, 'l0_normalisation':1, 'l1_normalisation':2, 'l2_normalisation': 3, 'l0_normalisation_adjusted': 4, 'weights_removed': 5}
-  plot_colors['none_norm'] = ['maroon', 'red', 'pink', 'deeppink', 'chocolate', 'peachpuff']
-  plot_colors['l1_norm'] = ['darkorange', 'yellow', 'lawngreen', 'forestgreen', 'aquamarine', 'darkseagreen']
-  plot_colors['l2_norm'] = ['teal', 'cyan', 'blue', 'dodgerblue', 'azure', 'indigo']
+  plot_colors['none_norm'] = ['rosybrown', 'firebrick', 'red', 'darksalmon', 'sienna', 'sandybrown']
+  plot_colors['l1_norm'] = ['olive', 'yellowgreen', 'lawngreen', 'lightgreen', 'darkgreen', 'mediumseagreen']
+  plot_colors['l2_norm'] = ['teal', 'cyan', 'lightblue', 'steelblue', 'cornflowerblue', 'blue']
+  plot_colors['abs_sum_norm'] = ['pink', 'fuchsia', 'magenta', 'orchid', 'mediumvioletred', 'hotpink']
+  plot_colors['sqr_sum_norm'] = ['indigo', 'darkorchid', 'darkviolet', 'rebeccapurple', 'purple', 'darkmagenta']
   return mcolors.CSS4_COLORS[plot_colors[norm][norm_to_int[normalisation]]]
 
 def choose_label(method):

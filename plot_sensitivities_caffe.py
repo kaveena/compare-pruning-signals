@@ -115,16 +115,19 @@ def plot_trend(metric1, metric2):
           else:
             continue
           summary['test_acc'][0] = global_initial_test_acc
-          plt.plot(summary[metric1][::args.test_interval], summary[metric2][::args.test_interval], label=norm + '-' + normalisation, color = get_color(norm, normalisation))
           # sparsity at 0.1% test_acc tolerance
-          valid_idx = np.where(summary['test_acc'] >= 0.999*global_initial_test_acc)[0]
+          valid_idx = np.where(summary['test_acc'] >= global_initial_test_acc-0.001)[0]
           pruning_itr_test_acc_01 = valid_idx[len(valid_idx)-1]
           # sparsity at 1% test_acc tolerance
-          valid_idx = np.where(summary['test_acc'] >= 0.99*global_initial_test_acc)[0]
+          valid_idx = np.where(summary['test_acc'] >= global_initial_test_acc-1.0)[0]
           pruning_itr_test_acc_1 = valid_idx[len(valid_idx)-1]
           # sparsity at 2% test_acc tolerance
           valid_idx = np.where(summary['test_acc'] >= 0.98*global_initial_test_acc)[0]
           pruning_itr_test_acc_2 = valid_idx[len(valid_idx)-1]
+          if args.cut:
+            plt.plot(summary[metric1][::args.test_interval], summary[metric2][::args.test_interval], label=norm + '-' + normalisation, color = get_color(norm, normalisation))
+          else:
+            plt.plot(summary[metric1][0:pruning_itr_test_acc_1][::args.test_interval], summary[metric2][0:pruning_itr_test_acc_1][::args.test_interval], label=norm + '-' + normalisation, color = get_color(norm, normalisation))
           plt.plot(summary[metric1][pruning_itr_test_acc_1], summary[metric2][pruning_itr_test_acc_1], color = get_color(norm, normalisation), marker = 'v')
           gc.collect()
 #      plt.ylim(0, 100.0)
@@ -166,6 +169,7 @@ parser.add_argument('--input', action='store_true', default=False)
 parser.add_argument('--test-interval', type=int, action='store', default=1)
 parser.add_argument('--metric1', action='store', default='sparsity')
 parser.add_argument('--metric2', action='store', default='test_acc')
+parser.add_argument('--cut', action='store_true', default=False)
 
 args = parser.parse_args()  
 
@@ -221,9 +225,9 @@ initial_conv_param, initial_fc_param = compute_num_param(original_list_modules)
 initial_num_param = initial_conv_param + initial_fc_param
 
 
-caffe_methods = ['fisher', 'hessian_diag', 'hessian_diag_approx2', 'taylor_2nd', 'taylor_2nd_approx2', 'taylor', 'weight_avg', 'diff_avg']
+caffe_methods = ['hessian_diag', 'hessian_diag_approx2', 'taylor_2nd', 'taylor_2nd_approx2', 'taylor', 'weight_avg', 'diff_avg']
 python_methods = ['apoz']
-norms = ['l1_norm', 'l2_norm', 'none_norm']
+norms = ['l1_norm', 'l2_norm', 'none_norm', 'abs_sum_norm', 'sqr_sum_norm']
 normalisations = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_normalisation', 'l0_normalisation_adjusted', 'weights_removed']
 saliency_inputs = ['weight', 'activation']
 
