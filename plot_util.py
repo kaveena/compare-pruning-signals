@@ -42,6 +42,69 @@ def choose_label(method):
         label = method
     return label
 
+def convert_label(label):
+  labels = label.split('-')
+  l = ' f(x) '
+  l_prefix = ''
+  l_suffix = ''
+  if 'none_norm' in labels:
+    l_prefix = ' \sum'
+    l_suffix = ' '
+  elif 'l1_norm' in labels:
+    l_prefix = ' \sum | '
+    l_suffix = ' | '
+  elif 'l2_norm' in labels:
+    l_prefix = ' \sum ( '
+    l_suffix = ' )^2 '
+  elif 'abs_sum_norm' in labels:
+    l_prefix = ' | \sum '
+    l_suffix = ' | '
+  elif 'sqr_sum_norm' in labels:
+    l_prefix = ' ( \sum  '
+    l_suffix = ' )^2'
+
+  if 'weight_avg' in labels:
+    l = ' x '
+  elif 'diff_avg' in labels:
+    l = ' \\frac{d\mathcal{L}}{dx}'
+  elif 'taylor_2nd_approx2' in labels:
+    l = ' -x \\frac{d\mathcal{L}}{dx} + \\frac{x^2}{2}\\frac{d^2\mathcal{L}}{dx^2}_{app. 2} (x)'
+  elif 'taylor_2nd' in labels:
+    l = ' -x \\frac{d\mathcal{L}}{dx} + \\frac{x^2}{2}\\frac{d^2\mathcal{L}}{dx^2}_{app. 1} (x)'
+  elif 'taylor' in labels:
+    l = ' -x \\frac{d\mathcal{L}}{dx} (x)'
+  elif 'hessian_diag_approx2' in labels:
+    l = ' \\frac{x^2}{2} \\frac{d^2\mathcal{L}}{dx^2}_{app. 2}(x)'
+  elif 'hessian_diag' in labels:
+    l = ' \\frac{x^2}{2} \\frac{d^2\mathcal{L}}{dx^2}_{app. 1} (x)'
+
+  S_x = l_prefix + l + l_suffix
+
+  if 'l0_normalisation' in labels:
+    l_prefix = ' \\frac{1}{card(x)}' + l_prefix
+  elif 'l1_normalisation' in labels:
+    l_prefix = ' \\frac{1}{ \| f(x) \| _1}' + l_prefix
+  elif 'l2_normalisation' in labels:
+    l_prefix = ' \\frac{1}{ \| f(x) \| _2}' + l_prefix
+  elif 'weights_removed' in labels:
+    l_prefix = ' \\frac{1}{n.weights}' + l_prefix
+  elif 'l0_normalisation_adjusted' in labels:
+    l_prefix = ' \\frac{1}{card(f(x)_{pruned})}' + l_prefix
+
+  l_prefix = '$' + l_prefix
+  l_suffix = l_suffix + '$'
+
+  if 'activation' in labels:
+    l_prefix = l_prefix.replace('x', 'a')
+    l_suffix = l_suffix.replace('x', 'a')
+    l = l.replace('x', 'a')
+  elif 'weight' in labels:
+    l_prefix = l_prefix.replace('x', 'w')
+    l_suffix = l_suffix.replace('x', 'w')
+    l = l.replace('x', 'w')
+  return l_prefix + l + l_suffix
+
+
 def choose_network(arch):
     if arch=='vgg19':
         return 'VGG-19'

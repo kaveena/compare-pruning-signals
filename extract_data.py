@@ -455,6 +455,8 @@ for method in summary_pruning_strategies.keys():
 
 global_initial_test_acc = global_initial_test_acc / float(global_num_test_acc_samples)
 
+print(global_initial_test_acc)
+
 for method in summary_pruning_strategies.keys():
   summary_pruning_strategies[method]['initial_test_acc'] = global_initial_test_acc
 

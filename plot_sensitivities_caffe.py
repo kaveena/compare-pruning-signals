@@ -106,7 +106,8 @@ def plot_trend(metric1, metric2):
     filename_suffix = '_input' + filename_suffix
   for saliency in caffe_methods:  
     for saliency_input in saliency_inputs:
-      plt.figure()
+      fig = plt.figure(figsize=(8.0, 6.0))
+      ax = plt.subplot(111)
       for norm in norms:
         for normalisation in normalisations:
           method = saliency_input + '-' + saliency + '-' + norm + '-' + normalisation
@@ -115,33 +116,30 @@ def plot_trend(metric1, metric2):
           else:
             continue
           summary['test_acc'][0] = global_initial_test_acc
-          # sparsity at 0.1% test_acc tolerance
-          valid_idx = np.where(summary['test_acc'] >= global_initial_test_acc-0.001)[0]
-          pruning_itr_test_acc_01 = valid_idx[len(valid_idx)-1]
           # sparsity at 1% test_acc tolerance
           valid_idx = np.where(summary['test_acc'] >= global_initial_test_acc-1.0)[0]
           pruning_itr_test_acc_1 = valid_idx[len(valid_idx)-1]
-          # sparsity at 2% test_acc tolerance
-          valid_idx = np.where(summary['test_acc'] >= 0.98*global_initial_test_acc)[0]
-          pruning_itr_test_acc_2 = valid_idx[len(valid_idx)-1]
           if args.cut:
-            plt.plot(summary[metric1][::args.test_interval], summary[metric2][::args.test_interval], label=norm + '-' + normalisation, color = get_color(norm, normalisation))
+            ax.plot(summary[metric1][0:pruning_itr_test_acc_1+1][::args.test_interval], summary[metric2][0:pruning_itr_test_acc_1+1][::args.test_interval], label=convert_label(norm + '-' + normalisation), color = get_color(norm, normalisation))
           else:
-            plt.plot(summary[metric1][0:pruning_itr_test_acc_1][::args.test_interval], summary[metric2][0:pruning_itr_test_acc_1][::args.test_interval], label=norm + '-' + normalisation, color = get_color(norm, normalisation))
-          plt.plot(summary[metric1][pruning_itr_test_acc_1], summary[metric2][pruning_itr_test_acc_1], color = get_color(norm, normalisation), marker = 'v')
+            ax.plot(summary[metric1][::args.test_interval], summary[metric2][::args.test_interval], label=convert_label(norm + '-' + normalisation), color = get_color(norm, normalisation))
+          ax.plot(summary[metric1][pruning_itr_test_acc_1], summary[metric2][pruning_itr_test_acc_1], color = get_color(norm, normalisation), marker = 'v')
           gc.collect()
 #      plt.ylim(0, 100.0)
 #      plt.xlim(0, 100.0)
 #      plt.xticks(np.arange(0, 100, 10))
 #      plt.yticks(np.arange(0, 100, 10))
-      plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', saliency: '+ saliency + ' using ' +saliency_input + 's' )
-      plt.xlabel(metric1)
-      plt.ylabel(metric2)
-      plt.legend(loc = 'lower left',prop = {'size': 6})
-      plt.grid()
+      ax.set_title('Pruning Sensitivity for ' + args.arch_caffe + ', f(x) = '+ convert_label(saliency) + ' using ' +saliency_input + 's' )
+      ax.set_xlabel(metric1)
+      ax.set_ylabel(metric2)
+      chartBox = ax.get_position()
+      ax.legend(loc = 'upper center', bbox_to_anchor=(1.2, 1.0) , ncol=1, prop = {'size': 6})
+      ax.grid()
       plt.savefig(filename_prefix + saliency_input + '-' + saliency + '-' + metric1 + '-' + metric2 + filename_suffix, bbox_inches='tight') 
   for saliency in python_methods:  
-    plt.figure()
+    fig = plt.figure(figsize=(8.0, 6.0))
+    ax = plt.subplot(111)
+    norm = 'none_norm'
     for normalisation in normalisations:
       method = saliency + '-' + normalisation
       if method in summary_pruning_strategies.keys():
@@ -150,12 +148,20 @@ def plot_trend(metric1, metric2):
         continue
       summary['test_acc'][0] = global_initial_test_acc
       summary = summary_pruning_strategies[method]
-      plt.plot(summary['sparsity'][::args.test_interval], summary['test_acc'][::args.test_interval], label=normalisation, color=get_color('none_norm', normalisation))
-    plt.title('Pruning Sensitivity for ' + args.arch_caffe + ', ' + saliency)
-    plt.xlabel(metric1)
-    plt.ylabel(metric2)
-    plt.legend(loc = 'lower left',prop = {'size': 6})
-    plt.grid()
+      # sparsity at 1% test_acc tolerance
+      valid_idx = np.where(summary['test_acc'] >= global_initial_test_acc-1.0)[0]
+      pruning_itr_test_acc_1 = valid_idx[len(valid_idx)-1]
+      if args.cut:
+        ax.plot(summary[metric1][0:pruning_itr_test_acc_1+1][::args.test_interval], summary[metric2][0:pruning_itr_test_acc_1+1][::args.test_interval], label=convert_label(norm + '-' + normalisation), color = get_color(norm, normalisation))
+      else:
+        ax.plot(summary[metric1][::args.test_interval], summary[metric2][::args.test_interval], label=convert_label(norm + '-' + normalisation), color = get_color(norm, normalisation))
+      ax.plot(summary[metric1][pruning_itr_test_acc_1], summary[metric2][pruning_itr_test_acc_1], color = get_color(norm, normalisation), marker = 'v')
+    ax.set_title('Pruning Sensitivity for ' + args.arch_caffe + ', ' + saliency)
+    ax.set_xlabel(metric1)
+    ax.set_ylabel(metric2)
+    chartBox = ax.get_position()
+    ax.legend(loc = 'upper center', bbox_to_anchor=(1.2, 0.8) , ncol=1, prop = {'size': 6})
+    ax.grid()
     plt.savefig(filename_prefix + saliency + '-' + metric1 + '-' + metric2 + filename_suffix, bbox_inches='tight') 
 
 
