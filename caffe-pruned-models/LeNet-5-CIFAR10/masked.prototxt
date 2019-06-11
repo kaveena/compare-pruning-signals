@@ -39,7 +39,7 @@ layer {
 }
 layer {
   name: "conv1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "data"
   top: "conv1"
   param {
@@ -55,6 +55,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 20
@@ -81,7 +84,7 @@ layer {
 }
 layer {
   name: "conv2"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "pool1"
   top: "conv2"
   param {
@@ -97,6 +100,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 50

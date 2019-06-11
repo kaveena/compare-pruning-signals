@@ -39,7 +39,7 @@ layer {
 }
 layer {
   name: "conv1"
-  type: "ConvolutionSaliency"
+  type: "Convolution"
   bottom: "data"
   top: "conv1"
   param {
@@ -92,7 +92,7 @@ layer {
 }
 layer {
   name: "conv2"
-  type: "ConvolutionSaliency"
+  type: "Convolution"
   bottom: "pool1"
   top: "conv2"
   param {

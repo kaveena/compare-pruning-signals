@@ -324,6 +324,10 @@ if __name__=='__main__':
   else:
     total_channels = total_output_channels
     channels = output_channels
+
+  net.reshape()
+
+
   print('Total number of channels to be considered for pruning: ', total_channels)
 
   summary = dict()

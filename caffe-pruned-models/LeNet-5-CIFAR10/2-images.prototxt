@@ -56,6 +56,12 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
+  convolution_saliency_param {
+    saliency_term: true
+  }
+  convolution_masked_param {
+    mask_term: true
+  }
   convolution_param {
     num_output: 20
     kernel_size: 5
@@ -97,6 +103,12 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_saliency_param {
+    saliency_term: true
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 50

@@ -295,8 +295,8 @@ for method in all_methods:
   summary_file_sensitivity = filename_sensitivity_prefix + method + filename_suffix
   summary_file_characterise = filename_characterise_prefix + method + filename_suffix
   if os.path.isfile(summary_file_sensitivity) and os.path.isfile(summary_file_characterise):
-    summary_pruning_strategies[method] = dict(np.load(summary_file_sensitivity).item()) 
-    summary_pruning_strategies[method+ '_characterise'] = dict(np.load(summary_file_characterise).item()) 
+    summary_pruning_strategies[method] = dict(np.load(summary_file_sensitivity, allow_pickle=True).item()) 
+    summary_pruning_strategies[method+ '_characterise'] = dict(np.load(summary_file_characterise, allow_pickle=True).item()) 
   else:
     if ('weights_removed' not in method) and ('l0_normalisation_adjusted' not in method):
       print(method + ' skipped')

@@ -44,7 +44,7 @@ layer {
 
 layer {
   name: "conv1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "data"
   top: "conv1"
   param {
@@ -62,6 +62,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 64
@@ -94,7 +97,7 @@ layer {
 
 layer {
   name: "fire2/squeeze1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "pool1"
   top: "fire2/squeeze1x1"
   param {
@@ -112,6 +115,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 16
@@ -131,7 +137,7 @@ layer {
 
 layer {
   name: "fire2/expand1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire2/squeeze1x1"
   top: "fire2/expand1x1"
   param {
@@ -149,6 +155,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 64
@@ -168,7 +177,7 @@ layer {
 
 layer {
   name: "fire2/expand3x3"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire2/squeeze1x1"
   top: "fire2/expand3x3"
   param {
@@ -186,6 +195,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 64
@@ -214,7 +226,7 @@ layer {
 
 layer {
   name: "fire3/squeeze1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire2/concat"
   top: "fire3/squeeze1x1"
   param {
@@ -232,6 +244,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 16
@@ -251,7 +266,7 @@ layer {
 
 layer {
   name: "fire3/expand1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire3/squeeze1x1"
   top: "fire3/expand1x1"
   param {
@@ -269,6 +284,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 64
@@ -288,7 +306,7 @@ layer {
 
 layer {
   name: "fire3/expand3x3"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire3/squeeze1x1"
   top: "fire3/expand3x3"
   param {
@@ -306,6 +324,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 64
@@ -346,7 +367,7 @@ layer {
 
 layer {
   name: "fire4/squeeze1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "pool3"
   top: "fire4/squeeze1x1"
   param {
@@ -364,6 +385,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 32
@@ -383,7 +407,7 @@ layer {
 
 layer {
   name: "fire4/expand1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire4/squeeze1x1"
   top: "fire4/expand1x1"
   param {
@@ -401,6 +425,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 128
@@ -420,7 +447,7 @@ layer {
 
 layer {
   name: "fire4/expand3x3"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire4/squeeze1x1"
   top: "fire4/expand3x3"
   param {
@@ -438,6 +465,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 128
@@ -466,7 +496,7 @@ layer {
 
 layer {
   name: "fire5/squeeze1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire4/concat"
   top: "fire5/squeeze1x1"
   param {
@@ -484,6 +514,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 32
@@ -503,7 +536,7 @@ layer {
 
 layer {
   name: "fire5/expand1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire5/squeeze1x1"
   top: "fire5/expand1x1"
   param {
@@ -521,6 +554,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 128
@@ -540,7 +576,7 @@ layer {
 
 layer {
   name: "fire5/expand3x3"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire5/squeeze1x1"
   top: "fire5/expand3x3"
   param {
@@ -558,6 +594,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 128
@@ -598,7 +637,7 @@ layer {
 
 layer {
   name: "fire6/squeeze1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "pool5"
   top: "fire6/squeeze1x1"
   param {
@@ -616,6 +655,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 48
@@ -635,7 +677,7 @@ layer {
 
 layer {
   name: "fire6/expand1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire6/squeeze1x1"
   top: "fire6/expand1x1"
   param {
@@ -653,6 +695,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 192
@@ -672,7 +717,7 @@ layer {
 
 layer {
   name: "fire6/expand3x3"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire6/squeeze1x1"
   top: "fire6/expand3x3"
   param {
@@ -690,6 +735,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 192
@@ -718,7 +766,7 @@ layer {
 
 layer {
   name: "fire7/squeeze1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire6/concat"
   top: "fire7/squeeze1x1"
   param {
@@ -736,6 +784,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 48
@@ -755,7 +806,7 @@ layer {
 
 layer {
   name: "fire7/expand1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire7/squeeze1x1"
   top: "fire7/expand1x1"
   param {
@@ -773,6 +824,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 192
@@ -792,7 +846,7 @@ layer {
 
 layer {
   name: "fire7/expand3x3"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire7/squeeze1x1"
   top: "fire7/expand3x3"
   param {
@@ -810,6 +864,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 192
@@ -838,7 +895,7 @@ layer {
 
 layer {
   name: "fire8/squeeze1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire7/concat"
   top: "fire8/squeeze1x1"
   param {
@@ -856,6 +913,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 64
@@ -875,7 +935,7 @@ layer {
 
 layer {
   name: "fire8/expand1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire8/squeeze1x1"
   top: "fire8/expand1x1"
   param {
@@ -893,6 +953,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 256
@@ -912,7 +975,7 @@ layer {
 
 layer {
   name: "fire8/expand3x3"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire8/squeeze1x1"
   top: "fire8/expand3x3"
   param {
@@ -930,6 +993,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 256
@@ -958,7 +1024,7 @@ layer {
 
 layer {
   name: "fire9/squeeze1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire8/concat"
   top: "fire9/squeeze1x1"
   param {
@@ -976,6 +1042,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 64
@@ -995,7 +1064,7 @@ layer {
 
 layer {
   name: "fire9/expand1x1"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire9/squeeze1x1"
   top: "fire9/expand1x1"
   param {
@@ -1013,6 +1082,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 256
@@ -1032,7 +1104,7 @@ layer {
 
 layer {
   name: "fire9/expand3x3"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire9/squeeze1x1"
   top: "fire9/expand3x3"
   param {
@@ -1050,6 +1122,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 256
@@ -1088,7 +1163,7 @@ layer {
 
 layer {
   name: "conv10"
-  type: "ConvolutionMasked"
+  type: "Convolution"
   bottom: "fire9/concat"
   top: "conv10"
   param {
@@ -1106,6 +1181,9 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 1000

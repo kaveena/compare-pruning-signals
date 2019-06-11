@@ -61,6 +61,7 @@ for k in convolution_list:
   input_layer = net.bottom_names[k][0] 
   named_modules[k].group = int(net.blobs[input_layer].channels / named_modules[k].blobs[0].channels) 
 
+net.reshape()
 
 fisher_caffe = dict()
 fisher = dict()

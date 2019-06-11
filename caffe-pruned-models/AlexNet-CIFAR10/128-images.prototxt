@@ -44,7 +44,7 @@ layer {
 
 layer {
   name: "conv1"
-  type: "ConvolutionSaliency"
+  type: "Convolution"
   bottom: "data"
   top: "conv1"
   param {
@@ -62,6 +62,12 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_saliency_param {
+    saliency_term: true
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 96
@@ -98,7 +104,7 @@ layer {
 
 layer {
   name: "conv2"
-  type: "ConvolutionSaliency"
+  type: "Convolution"
   bottom: "norm1"
   top: "conv2"
   param {
@@ -116,6 +122,12 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_saliency_param {
+    saliency_term: true
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 256
@@ -166,7 +178,7 @@ layer {
 
 layer {
   name: "conv3"
-  type: "ConvolutionSaliency"
+  type: "Convolution"
   bottom: "pool2"
   top: "conv3"
   param {
@@ -184,6 +196,12 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_saliency_param {
+    saliency_term: true
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 384
@@ -209,7 +227,7 @@ layer {
 
 layer {
   name: "conv4"
-  type: "ConvolutionSaliency"
+  type: "Convolution"
   bottom: "conv3"
   top: "conv4"
   param {
@@ -227,6 +245,12 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_saliency_param {
+    saliency_term: true
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 384
@@ -253,7 +277,7 @@ layer {
 
 layer {
   name: "conv5"
-  type: "ConvolutionSaliency"
+  type: "Convolution"
   bottom: "conv4"
   top: "conv5"
   param {
@@ -271,6 +295,12 @@ layer {
   param {
     lr_mult: 0
     decay_mult: 0
+  }
+  convolution_saliency_param {
+    saliency_term: true
+  }
+  convolution_masked_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 256
