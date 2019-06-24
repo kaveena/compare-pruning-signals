@@ -62,19 +62,20 @@ def saliency_scaling(net, input_pruning_signal, output_pruning_signal, scaling ,
         else:
           l0_norm += conv_module.height * conv_module.width
           l0_norm_adjusted += conv_module.height * conv_module.width
-        if scaling == 'weights_removed':
+        if (scaling == 'weights_removed') and (weights_removed != 0):
           s /= weights_removed
-        elif scaling == 'l0_normalisation':
+        elif (scaling == 'l0_normalisation') and (l0_norm != 0):
           s /= l0_norm
-        elif scaling == 'l0_normalisation_adjusted':
+        elif (scaling == 'l0_normalisation_adjusted') and (l0_norm_adjusted != 0):
           s /= l0_norm_adjusted
         channel_saliencies[i_c] = s
       L = 1.0
-      if scaling == 'l1_normalisation':
+      if (scaling == 'l1_normalisation'):
         L = np.abs(channel_saliencies[conv_module.input_channel_idx[0]:conv_module.input_channel_idx[-1] + 1]).sum()
-      elif scaling == 'l2_normalisation':
+      elif (scaling == 'l2_normalisation'):
         L = (channel_saliencies[conv_module.input_channel_idx[0]:conv_module.input_channel_idx[-1] + 1] ** 2).sum()
-      channel_saliencies[conv_module.input_channel_idx[0]:conv_module.input_channel_idx[-1] + 1] = channel_saliencies[conv_module.input_channel_idx[0]:conv_module.input_channel_idx[-1] + 1] / L
+      if (L != 0):
+        channel_saliencies[conv_module.input_channel_idx[0]:conv_module.input_channel_idx[-1] + 1] = channel_saliencies[conv_module.input_channel_idx[0]:conv_module.input_channel_idx[-1] + 1] / L
     # saliency for output channels
     for c in range(conv_module.output_channels):
       s = 0.0
@@ -114,19 +115,20 @@ def saliency_scaling(net, input_pruning_signal, output_pruning_signal, scaling ,
             sink = net.layer_dict[i_s]
             if sink.type == 'InnerProduct':
               weights_removed += sink.output_size * sink.input_size
-      if scaling == 'weights_removed':
+      if (scaling == 'weights_removed') and (weights_removed != 0):
         s /= weights_removed
-      elif scaling == 'l0_normalisation':
+      elif (scaling == 'l0_normalisation') and (l0_norm != 0):
         s /= l0_norm
-      elif scaling == 'l0_normalisation_adjusted':
+      elif (scaling == 'l0_normalisation_adjusted') and (l0_norm_adjusted != 0):
         s /= l0_norm_adjusted
       channel_saliencies[o_c + net.end_first_layer + 1] = s
     L = 1.0
-    if scaling == 'l1_normalisation':
+    if (scaling == 'l1_normalisation'):
       L = np.abs(channel_saliencies[conv_module.output_channel_idx[0] + net.end_first_layer + 1:conv_module.output_channel_idx[-1] + 1 + net.end_first_layer + 1]).sum()
-    elif scaling == 'l2_normalisation':
+    elif (scaling == 'l2_normalisation'):
       L = (channel_saliencies[conv_module.output_channel_idx[0] + net.end_first_layer + 1:conv_module.output_channel_idx[-1] + 1 + net.end_first_layer + 1] ** 2).sum()
-    channel_saliencies[conv_module.output_channel_idx[0] + net.end_first_layer + 1:conv_module.output_channel_idx[-1] + 1 + net.end_first_layer + 1] = channel_saliencies[conv_module.output_channel_idx[0] + net.end_first_layer + 1:conv_module.output_channel_idx[-1] + 1 + net.end_first_layer + 1] / L
+    if (L != 0):
+      channel_saliencies[conv_module.output_channel_idx[0] + net.end_first_layer + 1:conv_module.output_channel_idx[-1] + 1 + net.end_first_layer + 1] = channel_saliencies[conv_module.output_channel_idx[0] + net.end_first_layer + 1:conv_module.output_channel_idx[-1] + 1 + net.end_first_layer + 1] / L
   return channel_saliencies
 
 def get_channel_from_global_channel_idx(net, global_idx, is_input_channel_idx=False):
