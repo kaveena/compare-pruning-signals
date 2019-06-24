@@ -113,8 +113,8 @@ for layer in net.convolution_list:
   for l in conv_module.sinks:
     if 'InnerProduct' in net.layer_dict[l].type:
       net.layer_dict[l].input_channels = conv_module.output_channels
-      net.layer_dict[l].input_size = net.layer_dict[l].blobs[0].data.shape[0] / conv_module.output_channels
-      net.layer_dict[l].output_size = net.layer_dict[l].blobs[0].data.shape[1]
+      net.layer_dict[l].input_size = net.layer_dict[l].blobs[0].data.shape[1] / conv_module.output_channels
+      net.layer_dict[l].output_size = net.layer_dict[l].blobs[0].data.shape[0]
       net.layer_dict[l].active_input_channels = np.ones(conv_module.output_channels)
   in_offset += conv_module.input_channels
   out_offset += conv_module.output_channels
