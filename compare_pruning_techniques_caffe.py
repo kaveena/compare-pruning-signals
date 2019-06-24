@@ -41,8 +41,8 @@ def parser():
             help='Caffe saliency_norm')
     parser.add_argument('--saliency-input', action='store', default='WEIGHT',
             help='Caffe saliency_input')
-    parser.add_argument('--normalisation', action='store', default='l1_normalisation',
-            help='Layer-wise normalisation to use for saliency')
+    parser.add_argument('--scaling', action='store', default='l1_normalisation',
+            help='Layer-wise scaling to use for saliency')
     parser.add_argument('--test-size', type=int, default=80, 
             help='Number of batches to use for testing')
     parser.add_argument('--train-size', type=int, default=200, 
@@ -182,7 +182,7 @@ summary = dict()
 summary['test_acc'] = np.zeros(total_channels)
 summary['test_loss'] = np.zeros(total_channels)
 summary['pruned_channel'] = np.zeros(total_channels)
-summary['method'] = method + '-' + args.normalisation
+summary['method'] = method + '-' + args.scaling
 active_channel = list(range(total_channels))
 # remove channels that would not have a saliency in some cases
 if not args.output_channels:
@@ -295,7 +295,7 @@ for j in range(total_channels):
         conv_module.output_saliency_data = named_modules[layer].blobs[named_modules[layer].saliency_pos_].data[0]
       input_pruning_signal = np.hstack([input_pruning_signal, conv_module.input_saliency_data])
       output_pruning_signal = np.hstack([output_pruning_signal, conv_module.output_saliency_data])
-    pruning_signal = layerwise_normalisation(net, input_pruning_signal, output_pruning_signal, args.normalisation, args.saliency_input)
+    pruning_signal = saliency_scaling(net, input_pruning_signal, output_pruning_signal, args.scaling, args.saliency_input)
 
   if (method != 'WEIGHT_AVG') or (args.saliency_input != 'WEIGHT'):
     pruning_signal /= float(evalset_size) # get approximate change in loss using taylor expansions
@@ -306,7 +306,6 @@ for j in range(total_channels):
     PruneChannel(net, prune_channel, final=True, is_input_channel=True)
   else:
     PruneChannel(net, prune_channel - (net.end_first_layer + 1), final=True, is_input_channel=False)
-  sys.pause
   if args.characterise:
     output_train = saliency_solver.net.forward()
     current_loss = output_train['loss']
@@ -340,7 +339,7 @@ for j in range(total_channels):
   summary['test_loss'][j] = ce_loss
   summary['pruned_channel'][j] = prune_channel
   summary['predicted_eval_loss'][j] = (pruning_signal[active_channel])[prune_channel_idx]
-  print(args.normalisation, method, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
+  print(args.scaling, method, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
   active_channel.remove(prune_channel)
   
   if test_acc < args.stop_acc:

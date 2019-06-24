@@ -12,15 +12,16 @@ saliency_norm="NONE L1 L2 ABS_SUM SQR_SUM"
 saliency_caffe="TAYLOR HESSIAN_DIAG HESSIAN_DIAG_APPROX2 TAYLOR_2ND TAYLOR_2ND_APPROX2 WEIGHT_AVG DIFF_AVG"
 saliency_python="random apoz"
 saliency_available=$saliency_caffe$saliency_python
-normalisation_python="l0_normalisation l1_normalisation l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted"
+scaling_python="l0_normalisation l1_normalisation l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted"
 masked_prototoxt=$caffe_models\/$arch\/solver\-gpu.prototxt
 saliency_prototxt=$caffe_models/$arch/masked-one-saliency.prototxt
 default_save_path=$arch/results/prune
 force=false
 input_channels=false
+output_channels=false
 retrain=false
 characterise=false
-while getopts ":firc" arg; do
+while getopts ":firco" arg; do
   case $arg in
     c ) # Display help.
       characterise=true
@@ -31,6 +32,9 @@ while getopts ":firc" arg; do
       ;;
     i ) # Display help.
       input_channels=true
+      ;;
+    o ) # Display help.
+      output_channels=true
       ;;
     r ) # Display help.
       retrain=true
@@ -50,7 +54,12 @@ else
 fi
 if [[ $input_channels == true ]]
 then
-  filename_prefix=$filename_prefix\input_channels_
+  if [[ $output_channels == true ]]
+  then
+    filename_prefix=$filename_prefix\input_output_channels_
+  else
+    filename_prefix=$filename_prefix\input_channels_
+  fi
 fi
 mkdir -p $default_save_path
 for input in $saliency_input
@@ -59,7 +68,7 @@ do
   do
     for norm in $saliency_norm
     do
-      for normalisation in $normalisation_python
+      for scaling in $scaling_python
       do
         if [[ "$saliency_method" == "FISHER" ]] && [[ "$norm" != "NONE" ]]
         then
@@ -68,7 +77,7 @@ do
         input_lower=${input,,}
         saliency_method_lower=${saliency_method,,}
         norm_lower=${norm,,}
-        filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$normalisation\_caffe.npy
+        filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$scaling\_caffe.npy
         if [[ ! -e $filename ]] || [[ $force == true ]]
         then
           echo $filename
@@ -80,14 +89,15 @@ do
           \--stop-acc 10.0 \
           \--characterise $characterise \
           \--retrain $retrain \
-          \--input-channels-only $input_channels \
+          \--input-channels $input_channels \
+          \--output-channels $output_channels \
           \--test-interval $test_interval \
           \--test-size $test_size \
           \--eval-size $eval_size \
           \--train-size $train_size \
           \--method $saliency_method \
           \--saliency-norm $norm \
-          \--normalisation $normalisation \
+          \--scaling $scaling \
           \--saliency-input $input
         fi
       done
@@ -117,9 +127,9 @@ then
 fi
 
 saliency_method="apoz"
-for normalisation in $normalisation_python
+for scaling in $scaling_python
 do
-  filename=$filename_prefix$saliency_method-$normalisation\_caffe.npy
+  filename=$filename_prefix$saliency_method-$scaling\_caffe.npy
   if [[ ! -e  $filename ]] || [[ $force == true ]]
   then
     echo $filename
@@ -137,7 +147,7 @@ do
     \--eval-size $eval_size \
     \--train-size $train_size \
     \--method $saliency_method \
-    \--normalisation $normalisation \
+    \--scaling $scaling \
     \--saliency-input ACTIVATION
   fi
 done
