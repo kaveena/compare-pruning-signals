@@ -114,7 +114,7 @@ def saliency_scaling(net, input_pruning_signal, output_pruning_signal, scaling ,
           for i_s in conv_module.sinks:
             sink = net.layer_dict[i_s]
             if sink.type == 'InnerProduct':
-              weights_removed += sink.output_size * sink.input_size
+              weights_removed += sink.active_output_channels.sum() * sink.output_size * sink.input_size
       if (scaling == 'weights_removed') and (weights_removed != 0):
         s /= weights_removed
       elif (scaling == 'l0_normalisation') and (l0_norm != 0):
