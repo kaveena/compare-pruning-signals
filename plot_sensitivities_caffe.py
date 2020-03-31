@@ -66,32 +66,8 @@ def compute_sparsity(summary):
           training_loss = np.hstack([training_loss, summary['train_loss'][j], summary['retraining_loss'][j]])
       summary['training_iterations'] = np.hstack([0,np.cumsum(training_iterations)])
       # sparsity at 1% test_acc tolerance
-      valid_idx = np.where(summary['test_acc'] >= 0.99*summary['initial_test_acc'])[0]
+      valid_idx = np.where(summary['test_acc'] >= summary['initial_test_acc'] - 1)[0]
       pruning_itr_test_acc_1 = valid_idx[len(valid_idx)-1]
-      # sparsity at 2% test_acc tolerance
-      valid_idx = np.where(summary['test_acc'] >= 0.98*summary['initial_test_acc'])[0]
-      pruning_itr_test_acc_2 = valid_idx[len(valid_idx)-1]
-      # sparsity at 5% test_acc tolerance
-      valid_idx = np.where(summary['test_acc'] >= 0.95*summary['initial_test_acc'])[0]
-      pruning_itr_test_acc_5 = valid_idx[len(valid_idx)-1]
-      # sparsity at 10% test_acc tolerance
-      valid_idx = np.where(summary['test_acc'] >= 0.90*summary['initial_test_acc'])[0]
-      pruning_itr_test_acc_10 = valid_idx[len(valid_idx)-1]
-      # 50% sparsity
-      valid_idx = np.where(summary['sparsity'] >= 0.50)[0]
-      pruning_itr_sparsity_50 = valid_idx[0]
-      # 60% sparsity
-      valid_idx = np.where(summary['sparsity'] >= 0.60)[0]
-      pruning_itr_sparsity_60 = valid_idx[0]
-      # 70% sparsity
-      valid_idx = np.where(summary['sparsity'] >= 0.70)[0]
-      pruning_itr_sparsity_70 = valid_idx[0]
-      # 80% sparsity
-      valid_idx = np.where(summary['sparsity'] >= 0.80)[0]
-      pruning_itr_sparsity_80 = valid_idx[0]
-      # 90% sparsity
-      valid_idx = np.where(summary['sparsity'] >= 0.90)[0]
-      pruning_itr_sparsity_90 = valid_idx[0]
 
 def plot_trend(metric1, metric2):
   filename_prefix = args.arch_caffe+'/results/graph/'
@@ -283,23 +259,4 @@ for i in range(len(all_pruning)):
 global_initial_test_acc /= float(global_num_test_acc_sample)
 
 plot_trend(args.metric1, args.metric2)
-
-#axes.set_title('Pruning Sensitivity for ' + args.arch_caffe)
-#plt.xlabel('Sparsity Level in Convolution Layers')        
-#plt.ylabel('Test Set Accuracy')                                                     
-#handles, labels = axes.get_legend_handles_labels()
-#labels_part1 = tuple(label for label, handle in zip(labels, handles) if 'hybrid' not in label)
-#handles_part1 = tuple(handle for label, handle in zip(labels, handles) if 'hybrid' not in label)
-#labels_part1, handles_part1 = zip(*sorted(zip(labels_part1, handles_part1), key=lambda t: t[0]))
-#labels_part2 = tuple(label for label, handle in zip(labels, handles) if 'hybrid' in label)
-#handles_part2 = tuple(handle for label, handle in zip(labels, handles) if 'hybrid' in label)
-#labels_part2, handles_part2 = zip(*sorted(zip(labels_part2, handles_part2), key=lambda t: t[0]))
-#labels = labels_part1 + labels_part2
-#handles = handles_part1 + handles_part2
-#l = fig.legend(handles, labels, loc='right', ncol=1)
-#fig.legend(handles, labels, bbox_to_anchor=(0.525, 0.0), ncol=4)
-#plt.tight_layout(h_pad=1000.0)
-#plt.subplots_adjust(bottom=0.4)
-#plt.savefig(args.arch+'_pruning_.pdf') 
-#plt.show() 
 

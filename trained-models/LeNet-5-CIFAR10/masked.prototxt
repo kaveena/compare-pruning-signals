@@ -12,7 +12,7 @@ layer {
     scale: 0.00390625
   }
   image_data_param {
-    source: "caffe-training-data/train-index.txt"
+    source: "caffe-training-data/CIFAR10/train-index.txt"
     batch_size: 128
     new_height: 32
     new_width: 32
@@ -31,7 +31,7 @@ layer {
     scale: 0.00390625
   }
   image_data_param {
-    source: "caffe-training-data/eval-index.txt"
+    source: "caffe-training-data/CIFAR10/test-index.txt"
     batch_size: 128
     new_height: 32
     new_width: 32
@@ -56,12 +56,8 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
-    mask_filler {
-      type: "constant"
-      value: 1
-    }
   }
   convolution_param {
     num_output: 20
@@ -105,12 +101,8 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
-    mask_filler {
-      type: "constant"
-      value: 1
-    }
   }
   convolution_param {
     num_output: 50
@@ -197,9 +189,6 @@ layer {
   bottom: "ip2"
   bottom: "label"
   top: "top-1"
-  include {
-    phase: TEST
-  }
 }
 layer {
   name: "top-5"
@@ -207,9 +196,6 @@ layer {
   bottom: "ip2"
   bottom: "label"
   top: "top-5"
-  include {
-    phase: TEST
-  }
   accuracy_param {
     top_k: 5
   }

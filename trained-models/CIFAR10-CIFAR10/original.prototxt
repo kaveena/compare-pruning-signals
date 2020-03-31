@@ -14,7 +14,7 @@ layer {
     mean_value: [123.675, 116.28, 103.53]
   }
   image_data_param {
-    source: "caffe-training-data/128-images-index.txt"
+    source: "caffe-training-data/train-index.txt"
     batch_size: 64
     new_height: 32
     new_width: 32
@@ -35,8 +35,8 @@ layer {
     mean_value: [123.675, 116.28, 103.53]
   }
   image_data_param {
-    source: "caffe-training-data/128-images-index.txt"
-    batch_size: 128
+    source: "caffe-training-data/train-index.txt"
+    batch_size: 32
     new_height: 32
     new_width: 32
   }
@@ -52,20 +52,6 @@ layer {
   }
   param {
     lr_mult: 2
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
-    mask_term: true
   }
   convolution_param {
     num_output: 32
@@ -112,20 +98,6 @@ layer {
   param {
     lr_mult: 2
   }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
-    mask_term: true
-  }
   convolution_param {
     num_output: 32
     pad: 2
@@ -171,20 +143,6 @@ layer {
   }
   param {
     lr_mult: 2
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
-    mask_term: true
   }
   convolution_param {
     num_output: 64

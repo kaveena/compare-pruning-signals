@@ -2,9 +2,43 @@ name: "AlexNet"
 
 layer {
   name: "data"
-  type: "Input"
+  type: "ImageData"
   top: "data"
-  input_param { shape: { dim: 1 dim: 3 dim: 32 dim: 32 } }
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    mirror: true
+    scale: 0.00390625
+    mean_value: [123.675, 116.28, 103.53]
+  }
+  image_data_param {
+    source: "caffe-training-data/train-index.txt"
+    batch_size: 128
+    new_height: 32
+    new_width: 32
+  }
+}
+
+layer {
+  name: "data"
+  type: "ImageData"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    scale: 0.00390625
+    mean_value: [123.675, 116.28, 103.53]
+  }
+  image_data_param {
+    source: "caffe-training-data/test-index.txt"
+    batch_size: 128
+    new_height: 32
+    new_width: 32
+  }
 }
 
 layer {
@@ -19,6 +53,17 @@ layer {
   param {
     lr_mult: 2
     decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  convolution_mask_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 96
@@ -65,6 +110,17 @@ layer {
   param {
     lr_mult: 2
     decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  convolution_mask_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 256
@@ -126,6 +182,17 @@ layer {
     lr_mult: 2
     decay_mult: 0
   }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  convolution_mask_param {
+    mask_term: true
+  }
   convolution_param {
     num_output: 384
     pad: 1
@@ -160,6 +227,17 @@ layer {
   param {
     lr_mult: 2
     decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  convolution_mask_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 384
@@ -196,6 +274,17 @@ layer {
   param {
     lr_mult: 2
     decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  convolution_mask_param {
+    mask_term: true
   }
   convolution_param {
     num_output: 256
@@ -346,7 +435,31 @@ layer {
 
 layer {
   name: "loss"
-  type: "Softmax"
+  type: "SoftmaxWithLoss"
   bottom: "fc8"
+  bottom: "label"
   top: "loss"
+  loss_weight: 1
+}
+
+layer {
+  name: "top-1"
+  type: "Accuracy"
+  bottom: "fc8"
+  bottom: "label"
+  top: "top-1"
+  accuracy_param {
+    top_k: 1
+  }
+}
+
+layer {
+  name: "top-5"
+  type: "Accuracy"
+  bottom: "fc8"
+  bottom: "label"
+  top: "top-5"
+  accuracy_param {
+    top_k: 5
+  }
 }

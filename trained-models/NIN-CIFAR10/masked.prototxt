@@ -14,7 +14,7 @@ layer {
     mean_value: [123.675, 116.28, 103.53]
   }
   image_data_param {
-    source: "caffe-training-data/128-images-index.txt"
+    source: "caffe-training-data/train-index.txt"
     batch_size: 25
     new_height: 32
     new_width: 32
@@ -35,7 +35,7 @@ layer {
     mean_value: [123.675, 116.28, 103.53]
   }
   image_data_param {
-    source: "caffe-training-data/128-images-index.txt"
+    source: "caffe-training-data/test-index.txt"
     batch_size: 128
     new_height: 32
     new_width: 32
@@ -63,10 +63,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -109,10 +106,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -156,10 +150,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -223,10 +214,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -269,10 +257,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -316,10 +301,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -383,10 +365,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -429,10 +408,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -476,10 +452,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_saliency_param {
-    saliency_term: true
-  }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {

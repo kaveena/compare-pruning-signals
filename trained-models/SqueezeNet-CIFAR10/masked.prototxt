@@ -63,7 +63,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -116,7 +116,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -156,7 +156,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -196,7 +196,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -245,7 +245,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -285,7 +285,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -325,7 +325,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -386,7 +386,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -426,7 +426,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -466,7 +466,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -515,7 +515,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -555,7 +555,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -595,7 +595,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -656,7 +656,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -696,7 +696,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -736,7 +736,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -785,7 +785,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -825,7 +825,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -865,7 +865,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -914,7 +914,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -954,7 +954,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -994,7 +994,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -1043,7 +1043,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -1083,7 +1083,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -1123,7 +1123,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
@@ -1182,7 +1182,7 @@ layer {
     lr_mult: 0
     decay_mult: 0
   }
-  convolution_masked_param {
+  convolution_mask_param {
     mask_term: true
   }
   convolution_param {
