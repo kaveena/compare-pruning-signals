@@ -14,7 +14,7 @@ layer {
     mean_value: [123.675, 116.28, 103.53]
   }
   image_data_param {
-    source: "caffe-training-data/train-index.txt"
+    source: "caffe-training-data/CIFAR10/train-index.txt"
     batch_size: 128
     new_height: 32
     new_width: 32
@@ -34,7 +34,7 @@ layer {
     mean_value: [123.675, 116.28, 103.53]
   }
   image_data_param {
-    source: "caffe-training-data/test-index.txt"
+    source: "caffe-training-datai/CIFAR10/test-index.txt"
     batch_size: 128
     new_height: 32
     new_width: 32
