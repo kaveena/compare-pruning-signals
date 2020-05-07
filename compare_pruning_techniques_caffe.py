@@ -167,9 +167,7 @@ train_loss_upper_bound = (100 + args.tolerance) * initial_train_loss / 100.0
 train_acc_lower_bound = (100 - args.tolerance) * initial_train_acc / 100.0
 
 for j in range(pruning_net.total_output_channels): 
-  for layer in pruning_net.convolution_list:
-    pruning_net.graph[layer].caffe_layer.blobs[pruning_net.graph[layer].saliency_pos].data.fill(0)
-    pruning_net.graph[layer].caffe_layer.blobs[pruning_net.graph[layer].saliency_pos+1].data.fill(0)
+  pruning_net.ClearSaliencyBlobs()
 
   # compute saliency    
   current_eval_loss = 0.0
@@ -228,6 +226,7 @@ for j in range(pruning_net.total_output_channels):
   summary['test_loss'][j] = ce_loss
   summary['pruned_channel'][j] = prune_channel
   summary['predicted_eval_loss'][j] = (pruning_signal[active_channel])[prune_channel_idx]
+  summary['conv_param'][j], summary['fc_param'][j] = pruning_net.GetNumParam()
   print(args.scaling, method, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
   active_channel.remove(prune_channel)
   

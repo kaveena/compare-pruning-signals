@@ -533,3 +533,9 @@ class PruningGraph:
       for i in range(self.graph[l].input_channels):
         if not np.any(self.graph[l].caffe_layer.blobs[0].data[:, i*self.graph[l].input_size: (i+1)*self.graph[l].input_size - 1]):
           self.graph[l].active_input_channels[i] = 0
+  def ClearSaliencyBlobs(self):
+      for layer in self.convolution_list:
+        graph_layer = self.graph[layer]
+        if graph_layer.saliency_term:
+          graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data.fill(0)
+          graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data.fill(0)

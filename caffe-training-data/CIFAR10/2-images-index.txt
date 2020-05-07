@@ -1,0 +1,2 @@
+/home/kaveena/caffe-cifar-10-training/caffe-training-data/test-0.png 2
+/home/kaveena/caffe-cifar-10-training/caffe-training-data/test-1.png 1
