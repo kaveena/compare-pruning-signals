@@ -141,7 +141,10 @@ def plot_trend(metric1, metric2):
     plt.savefig(filename_prefix + saliency + '-' + metric1 + '-' + metric2 + filename_suffix, bbox_inches='tight') 
 
 
-to_torch_arch = {'LeNet-5-CIFAR10': 'LeNet_5', 'AlexNet-CIFAR10': 'AlexNet', 'NIN-CIFAR10': 'NIN', 'CIFAR10-CIFAR10': 'CIFAR10', 'SqueezeNet-CIFAR10': 'SqueezeNet'}
+saliency_input = ['activation', 'weight']
+saliency_pointwise = ['taylor', 'hessian_diag_approx1', 'hessian_diag_approx2', 'taylor_2nd_approx1', 'taylor_2nd_approx2', 'average_input', 'average_gradient']
+saliency_reduction=['none', 'l1', 'l2', 'abs_sum', 'sqr_sum']
+saliency_scaling=['l2_normalisation', 'no_normalisation', 'weights_removed', 'l0_normalisation_adjusted', 'l1_normalisation']
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--arch-caffe', action='store', default='LeNet-5-CIFAR10')
@@ -154,8 +157,6 @@ parser.add_argument('--metric2', action='store', default='test_acc')
 parser.add_argument('--cut', action='store_true', default=False)
 
 args = parser.parse_args()  
-
-args.arch = to_torch_arch[args.arch_caffe]
 
 stop_acc = 10.01
 prototxt = 'caffe-pruned-models/'+ args.arch_caffe + '/test.prototxt'  

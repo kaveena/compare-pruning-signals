@@ -4,7 +4,7 @@ cifar10_data=../caffe-cifar-10-training
 saliency_input="ACTIVATION WEIGHT"
 saliency_norm="NONE L1 L2 ABS_SUM SQR_SUM"
 saliency_caffe="TAYLOR HESSIAN_DIAG_APPROX1 HESSIAN_DIAG_APPROX2 TAYLOR_2ND_APPROX1 TAYLOR_2ND_APPROX2 
-AVERAGE_INPUT AVERAGE_GRADIENT"
+AVERAGE_INPUT AVERAGE_GRADIENT APOZ"
 saliency_python="random"
 saliency_available=$saliency_caffe$saliency_python
 #scaling_python="l0_normalisation l1_normalisation l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted"

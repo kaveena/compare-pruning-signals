@@ -226,6 +226,7 @@ for j in range(pruning_net.total_output_channels):
   summary['test_loss'][j] = ce_loss
   summary['pruned_channel'][j] = prune_channel
   summary['predicted_eval_loss'][j] = (pruning_signal[active_channel])[prune_channel_idx]
+  summary['conv_param'][j], summary['fc_param'][j] = pruning_net.GetNumParam()
   print(args.scaling, method, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
   active_channel.remove(prune_channel)
   

@@ -25,6 +25,9 @@ def parser():
 
 args = parser().parse_args()
 
+if args.gpu:
+  caffe.set_mode_gpu()
+
 saliency_prototxt_file, saliency_prototxt_filename = tempfile.mkstemp()
 small_images_file, small_images_filename = tempfile.mkstemp()
 
@@ -57,6 +60,8 @@ weight_avg = dict()
 weight_avg_caffe = dict()
 diff_avg = dict()
 diff_avg_caffe = dict()
+apoz = dict()
+apoz_caffe = dict()
 
 # Create a prototxt that uses the validation set and has saliency computation
 
@@ -93,6 +98,7 @@ for pointwise_saliency in caffe_pb2.ConvolutionSaliencyParameter.SALIENCY.keys()
   taylor_2nd_approx2_correct = True
   weight_avg_correct = True
   diff_avg_correct = True
+  apoz_correct = True
 
   # compute saliency    
   for iter in range(evalset_size):
@@ -145,6 +151,11 @@ for pointwise_saliency in caffe_pb2.ConvolutionSaliencyParameter.SALIENCY.keys()
     diff_avg[k] = net.blobs[k].diff.sum(axis=(0,2,3))
     diff_avg_correct*=(np.allclose(diff_avg_caffe[k], diff_avg[k], rtol=1e-3))
 
+  for k in pruning_net.convolution_list:
+    apoz_caffe[k] = pruning_net.graph[k].caffe_layer.blobs[pruning_net.graph[k].saliency_pos].data[0]
+    apoz[k] = (net.blobs[k].data > 0).sum(axis=(0,2,3)) / (net.blobs[k].num)
+    apoz_correct*=(np.allclose(apoz_caffe[k], apoz[k]))
+
   if (pointwise_saliency=='TAYLOR'):
     print("TAYLOR OK" if taylor_correct else "TAYLOR KO")
   if (pointwise_saliency=='HESSIAN_DIAG_APPROX1'):
@@ -159,6 +170,8 @@ for pointwise_saliency in caffe_pb2.ConvolutionSaliencyParameter.SALIENCY.keys()
     print("WEIGHT_AVG OK" if weight_avg_correct else "WEIGHT_AVG KO")
   if (pointwise_saliency=='AVERAGE_GRADIENT'):
     print("DIFF_AVG OK" if diff_avg_correct else "DIFF_AVG KO")
+  if (pointwise_saliency=='APOZ'):
+    print("APOZ OK" if apoz_correct else "APOZ KO")
 
 # Weight based 
 for pointwise_saliency in caffe_pb2.ConvolutionSaliencyParameter.SALIENCY.keys():
@@ -185,6 +198,21 @@ for pointwise_saliency in caffe_pb2.ConvolutionSaliencyParameter.SALIENCY.keys()
   evalset_size = 1;
   pruning_net.ClearSaliencyBlobs()
   net.clear_param_diffs();
+
+  fisher_correct = True
+  taylor_correct = True
+  hessian_diag_correct = True
+  hessian_diag_approx2_correct = True
+  taylor_2nd_correct = True
+  taylor_2nd_approx2_correct = True
+  weight_avg_correct = True
+  diff_avg_correct = True
+  apoz_correct = True
+
+  # compute saliency    
+  for iter in range(evalset_size):
+    net.forward()
+    net.backward()
 
 #   print("Check 1st order Taylor")
   for k in pruning_net.convolution_list:
@@ -229,6 +257,11 @@ for pointwise_saliency in caffe_pb2.ConvolutionSaliencyParameter.SALIENCY.keys()
     diff_avg[k] = named_modules[k].blobs[0].diff.sum(axis=(1,2,3)) + named_modules[k].blobs[1].diff
     diff_avg_correct*=(np.allclose(diff_avg_caffe[k], diff_avg[k], rtol=1e-3))
 
+  for k in pruning_net.convolution_list:
+    apoz_caffe[k] = pruning_net.graph[k].caffe_layer.blobs[pruning_net.graph[k].saliency_pos].data[0]
+    apoz[k] = (named_modules[k].blobs[0].data > 0).sum(axis=(1,2,3)) + (named_modules[k].blobs[1].data > 0)
+    apoz_correct*=(np.allclose(apoz_caffe[k], apoz[k], rtol=1e-3))
+
   if (pointwise_saliency=='TAYLOR'):
     print("TAYLOR OK" if taylor_correct else "TAYLOR KO")
   if (pointwise_saliency=='HESSIAN_DIAG_APPROX1'):
@@ -243,3 +276,5 @@ for pointwise_saliency in caffe_pb2.ConvolutionSaliencyParameter.SALIENCY.keys()
     print("WEIGHT_AVG OK" if weight_avg_correct else "WEIGHT_AVG KO")
   if (pointwise_saliency=='AVERAGE_GRADIENT'):
     print("DIFF_AVG OK" if diff_avg_correct else "DIFF_AVG KO")
+  if (pointwise_saliency=='APOZ'):
+    print("APOZ OK" if apoz_correct else "APOZ KO")

@@ -16,6 +16,7 @@ layer {
     batch_size: 128
     new_height: 32
     new_width: 32
+    shuffle: true
   }
 }
 layer {
@@ -27,7 +28,7 @@ layer {
     phase: TEST
   }
   transform_param {
-    mirror: true
+    mirror: false
     scale: 0.00390625
   }
   image_data_param {
@@ -35,6 +36,7 @@ layer {
     batch_size: 128
     new_height: 32
     new_width: 32
+    shuffle: true
   }
 }
 layer {
