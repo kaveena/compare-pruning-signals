@@ -102,6 +102,7 @@ saliency_prototxt = get_prototxt_from_file(original_prototxt_filename)
 add_mask_to_prototxt(saliency_prototxt)
 for l in saliency_prototxt.layer:
   if l.type == 'ImageData':
+    l.image_data_param.batch_size = 128
     l.image_data_param.source = eval_index_filename
     l.image_data_param.shuffle = True
 add_saliency_to_prototxt(saliency_prototxt, [args.saliency_pointwise], [args.saliency_input], [args.saliency_norm])
