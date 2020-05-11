@@ -14,8 +14,8 @@ layer {
     mean_value: [123.675, 116.28, 103.53]
   }
   image_data_param {
-    source: "caffe-training-data/train-index.txt"
-    batch_size: 25
+    source: "caffe-training-data/CIFAR10/train-index.txt"
+    batch_size: 128
     new_height: 32
     new_width: 32
     shuffle: true
@@ -31,13 +31,13 @@ layer {
     phase: TEST
   }
   transform_param {
-    mirror: true
+    mirror: false
     scale: 0.00390625
     mean_value: [123.675, 116.28, 103.53]
   }
   image_data_param {
-    source: "caffe-training-data/test-index.txt"
-    batch_size: 128
+    source: "caffe-training-data/CIFAR10/test-index.txt"
+    batch_size: 125
     new_height: 32
     new_width: 32
     shuffle: true

@@ -16,7 +16,7 @@ layer {
   image_data_param {
     source: "caffe-training-data/IMAGENET32x32/train-index.txt"
     shuffle: true
-    batch_size: 16
+    batch_size: 128
     new_height: 32
     new_width: 32
   }
@@ -36,7 +36,7 @@ layer {
   }
   image_data_param {
     source: "caffe-training-data/IMAGENET32x32/test-index.txt"
-    shuffle: false
+    shuffle: true
     batch_size: 125
     new_height: 32
     new_width: 32

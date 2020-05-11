@@ -1,4 +1,5 @@
 name: "LeNet"
+
 layer {
   name: "data"
   type: "ImageData"
@@ -33,7 +34,7 @@ layer {
   }
   image_data_param {
     source: "caffe-training-data/CIFAR10/test-index.txt"
-    batch_size: 128
+    batch_size: 125
     new_height: 32
     new_width: 32
     shuffle: true
