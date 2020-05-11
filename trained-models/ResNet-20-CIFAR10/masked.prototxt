@@ -1682,7 +1682,7 @@ layer {
 layer {
   name: "top-5"
   type: "Accuracy"
-  bottom: "ip"
+  bottom: "softmax"
   bottom: "label"
   top: "top-5"
   accuracy_param {
