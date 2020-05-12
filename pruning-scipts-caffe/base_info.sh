@@ -82,6 +82,14 @@ for (( i=1; i<=$iterations; i++ ))
           saliency_method_lower=${saliency_method,,}
           norm_lower=${norm,,}
           filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$scaling\_caffe_iter$i.npy
+          skip=false
+          if [[ $saliency_method == HESSIAN_DIAG_APPROX2 ]]
+          then 
+            if [[ $norm == NONE ]] || [[ $norm == L1 ]] || [[ $norm == ABS_SUM ]]
+            then
+              skip=true
+            fi
+          fi
           if [[ $skip_input_channels == true ]] && [[ $skip_output_channels == true ]]
           then 
             filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$scaling\_skip_input_channels\_skip_output_channels\_caffe_iter$i.npy
@@ -92,7 +100,7 @@ for (( i=1; i<=$iterations; i++ ))
           then 
             filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$scaling\_skip_output_channels\_caffe_iter$i.npy
           fi
-          if [[ ! -e $filename ]] || [[ $force == true ]]
+          if [[ ! -e $filename ]] || [[ $force == true ]] && [[ $skip == false ]]
           then
             echo $filename
             GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
