@@ -90,7 +90,7 @@ for (( i=1; i<=$iterations; i++ ))
               skip=true
             fi
           fi
-          if [[ $saliency_method == TAYLOR ]] && [[ $saliency_input == WEIGHT ]]
+          if [[ $saliency_method == TAYLOR ]] && [[ $input == WEIGHT ]]
           then 
             if [[ $norm == NONE ]] || [[ $norm == ABS_SUM ]] || [[ $norm == SQR_SUM ]]
             then
