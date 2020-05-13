@@ -90,6 +90,16 @@ for (( i=1; i<=$iterations; i++ ))
               skip=true
             fi
           fi
+          if [[ $saliency_method == TAYLOR ]] && [[ $saliency_input == WEIGHT ]]
+          then 
+            if [[ $norm == NONE ]] || [[ $norm == ABS_SUM ]] || [[ $norm == SQR_SUM ]]
+            then
+              if [[ $scaling == no_normalisation ]] || [[ $scaling == l1_normalisation ]] || [[ $scaling == l2_normalisation ]] || [[ $scaling == weights_removed ]]
+              then
+                skip=true
+              fi
+            fi
+          fi
           if [[ $skip_input_channels == true ]] && [[ $skip_output_channels == true ]]
           then 
             filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$scaling\_skip_input_channels\_skip_output_channels\_caffe_iter$i.npy
