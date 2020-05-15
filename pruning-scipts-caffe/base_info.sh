@@ -70,6 +70,12 @@ saliency_scale=none_scale
 mkdir -p $default_save_path
 for (( i=1; i<=$iterations; i++ ))
   do
+  if [[ $i == 1 ]]
+  then
+    use_stop_acc=10.0
+  else
+    use_stop_acc=stop_acc
+  fi
   for input in $saliency_input
   do
     for saliency_method in $saliency_caffe
@@ -117,7 +123,7 @@ for (( i=1; i<=$iterations; i++ ))
             \--filename $filename \
             \--arch $arch \
             \--dataset $dataset \
-            \--stop-acc 10.0 \
+            \--stop-acc use_stop_acc \
             \--characterise $characterise \
             \--retrain $retrain \
             \--input-channels $input_channels \
