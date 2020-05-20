@@ -74,7 +74,7 @@ for (( i=1; i<=$iterations; i++ ))
   then
     use_stop_acc=10.0
   else
-    use_stop_acc=stop_acc
+    use_stop_acc=$stop_acc
   fi
   for input in $saliency_input
   do
@@ -130,7 +130,7 @@ for (( i=1; i<=$iterations; i++ ))
             \--filename $filename \
             \--arch $arch \
             \--dataset $dataset \
-            \--stop-acc use_stop_acc \
+            \--stop-acc $use_stop_acc \
             \--characterise $characterise \
             \--retrain $retrain \
             \--input-channels $input_channels \
