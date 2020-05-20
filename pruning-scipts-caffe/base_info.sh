@@ -106,6 +106,13 @@ for (( i=1; i<=$iterations; i++ ))
               fi
             fi
           fi
+          if [[ $saliency_method == APOZ ]]
+          then 
+            if [[ $norm == ABS_SUM ]] || [[ $norm == L2 ]] || [[ $norm == L1 ]]
+            then
+              skip=true
+            fi
+          fi
           if [[ $skip_input_channels == true ]] && [[ $skip_output_channels == true ]]
           then 
             filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$scaling\_skip_input_channels\_skip_output_channels\_caffe_iter$i.npy
