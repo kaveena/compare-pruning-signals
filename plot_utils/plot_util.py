@@ -84,6 +84,14 @@ def choose_linewidth(method):
     else:
         return 1.0
 
+def get_color_normalisation(normalisation):
+  normalisation_to_color = {'no_normalisation':'r', 'l0_normalisation':'g', 'l1_normalisation':'b', 'l2_normalisation': 'y', 'l0_normalisation_adjusted': 'c', 'weights_removed': 'm'}
+  return normalisation_to_color[normalisation]
+
+def get_norm_hatch(norm):
+  norm_to_hatch = {'none_norm': '//', 'l1_norm': '\\', 'l2_norm': '+', 'abs_sum_norm': 'o', 'sqr_sum_norm': '*'}
+  return norm_to_hatch[norm]
+
 def get_color(norm, normalisation):
   plot_colors = dict()
   norm_to_int = {'no_normalisation':0, 'l0_normalisation':1, 'l1_normalisation':2, 'l2_normalisation': 3, 'l0_normalisation_adjusted': 4, 'weights_removed': 5}
