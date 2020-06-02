@@ -163,9 +163,15 @@ print('Initial eval loss', summary['initial_eval_loss'])
 print('Initial eval acc', summary['initial_eval_acc'])
 
 # Train accuracy and loss
-initial_train_acc, initial_train_loss = test_network(saliency_solver.net, 100)
-train_loss_upper_bound = (100 + args.tolerance) * initial_train_loss / 100.0
-train_acc_lower_bound = (100 - args.tolerance) * initial_train_acc / 100.0
+summary['initial_train_acc'], summary['initial_train_loss'] = test_network(saliency_solver.net, 100)
+train_loss_upper_bound = (100 + args.tolerance) * summary['initial_train_loss'] / 100.0
+train_acc_lower_bound = (100 - args.tolerance) * summary['initial_train_acc'] / 100.0
+if args.characterise:
+  summary['train_loss'] = np.zeros(pruning_net.total_output_channels)
+  summary['train_acc'] = np.zeros(pruning_net.total_output_channels)
+  summary['retraining_loss'] = np.empty((pruning_net.total_output_channels,), dtype=object)
+  summary['retraining_acc'] = np.empty((pruning_net.total_output_channels,), dtype=object)
+
 
 for j in range(pruning_net.total_output_channels): 
   pruning_net.ClearSaliencyBlobs()
@@ -205,7 +211,7 @@ for j in range(pruning_net.total_output_channels):
     for i in range(args.train_size):
       if ((i==0) and (current_acc >= train_acc_lower_bound)):
         break
-      if (current_acc >= initial_train_acc):
+      if (current_acc >= summary['initial_train_acc']):
         break
       saliency_solver.net.clear_param_diffs()
       output_train = saliency_solver.net.forward()
