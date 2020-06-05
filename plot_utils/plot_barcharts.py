@@ -57,7 +57,7 @@ def plot_trend(metric1, metric2):
           y = summary[metric2][::args.test_interval]
           y_std = summary[metric2+'_std'][::args.test_interval]
           y_point = global_initial_test_acc - 5.0
-          x_point, x_error = get_error(x, y, y_std, global_initial_test_acc - 5.0)
+          x_point, x_error = get_error(x, y, y_std, y_point)
           y_bar.append(x_point)
           x_bar.append(norm + '-' + normalisation)
           y_bar_err.append(x_error)
@@ -69,8 +69,9 @@ def plot_trend(metric1, metric2):
       for i_bar in range(len(barlist)):
         bar = barlist[i_bar]
         bar.set_hatch(get_norm_hatch(x_bar[i_bar].split('-')[0]))
-      axs[i_si].set_title(saliency_input)
-      fig.suptitle(convert_label(saliency))
+      axs[i_si].set_title('$ x = '+ saliency_input + ' $')
+      axs[i_si].set_ylim([0, 70])
+      fig.suptitle('$f(x) = $' + convert_label(saliency))
 #      axs[i_s, i_si].bar(x_bar, y_bar, yerr=y_bar_err)
 #      ax.set_title('Pruning Sensitivity for ' + args.arch + ', f(x) = '+ convert_label(saliency) + ' using ' +saliency_input + 's' )
 #      ax.set_xlabel(metric1)
@@ -78,7 +79,8 @@ def plot_trend(metric1, metric2):
 #      chartBox = ax.get_position()
 #      ax.legend(loc = 'upper center', bbox_to_anchor=(1.2, 1.0) , ncol=1, prop = {'size': 6})
 #      ax.grid()
-#      plt.savefig(filename_prefix + saliency_input + '-' + saliency + '-' + metric1 + '-' + metric2 + filename_suffix, bbox_inches='tight') 
+      fig.tight_layout(pad=3.0)
+      plt.savefig(filename_prefix +  'barchart-' + saliency + '-' + metric1 + '-' + metric2 + filename_suffix) 
   plt.show()
 
 parser = argparse.ArgumentParser()
