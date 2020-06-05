@@ -32,9 +32,9 @@ def convert_label(label):
     l_prefix = ' ( \sum  '
     l_suffix = ' )^2'
   
-  if 'input_average' in labels:
+  if 'average_input' in labels:
     l = ' x '
-  elif 'gradient_average' in labels:
+  elif 'average_gradient' in labels:
     l = ' \\frac{d\mathcal{L}}{dx}'
   elif 'taylor_2nd_approx2' in labels:
     l = ' -x \\frac{d\mathcal{L}}{dx} + \\frac{x^2}{2}\\frac{d^2\mathcal{L}}{dx^2}_{app. 2} (x)'
