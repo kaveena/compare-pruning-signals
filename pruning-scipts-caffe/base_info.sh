@@ -130,24 +130,24 @@ for (( i=1; i<=$iterations; i++ ))
             then
               touch $filename_partial
               echo $filename
-#              GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
-#              \--filename $filename \
-#              \--arch $arch \
-#              \--dataset $dataset \
-#              \--stop-acc $use_stop_acc \
-#              \--characterise $characterise \
-#              \--retrain $retrain \
-#              \--input-channels $input_channels \
-#              \--output-channels $output_channels \
-#              \--test-interval $test_interval \
-#              \--test-size $test_size \
-#              \--eval-size $eval_size \
-#              \--train-size $train_size \
-#              \--saliency-pointwise $saliency_method \
-#              \--saliency-norm $norm \
-#              \--scaling $scaling \
-#              \--saliency-input $input \
-#              \--saliency-scale $saliency_scale
+              GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
+              \--filename $filename \
+              \--arch $arch \
+              \--dataset $dataset \
+              \--stop-acc $use_stop_acc \
+              \--characterise $characterise \
+              \--retrain $retrain \
+              \--input-channels $input_channels \
+              \--output-channels $output_channels \
+              \--test-interval $test_interval \
+              \--test-size $test_size \
+              \--eval-size $eval_size \
+              \--train-size $train_size \
+              \--saliency-pointwise $saliency_method \
+              \--saliency-norm $norm \
+              \--scaling $scaling \
+              \--saliency-input $input \
+              \--saliency-scale $saliency_scale
               rm $filename_partial
             fi
           fi
