@@ -203,7 +203,7 @@ for j in range(pruning_net.total_output_channels):
   if args.characterise:
     output_train = saliency_solver.net.forward()
     current_loss = output_train['loss']
-    current_acc = output_train['top-1']
+    current_acc = 100.0 * output_train['top-1']
     summary['train_loss'][j] = current_loss
     summary['train_acc'][j] = current_acc
     retraining_loss = np.array([])
@@ -216,7 +216,7 @@ for j in range(pruning_net.total_output_channels):
       saliency_solver.net.clear_param_diffs()
       output_train = saliency_solver.net.forward()
       current_loss = output_train['loss']
-      current_acc = output_train['top-1']
+      current_acc = 100.0 * output_train['top-1']
       saliency_solver.net.backward()
       saliency_solver.apply_update()
       retraining_loss = np.hstack([retraining_loss, current_loss])

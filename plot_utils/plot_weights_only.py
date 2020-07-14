@@ -12,6 +12,13 @@ from utils import *
 from plot_utils.plot_util import *
 import pandas as pd
 
+ylim = dict()
+ylim['LeNet-5'] = {'CIFAR10': 25}
+ylim['CIFAR10'] = {'CIFAR10': 45}
+ylim['ResNet-20'] = {'CIFAR10': 15, 'CIFAR100': 5}
+ylim['NIN'] = {'CIFAR10': 35, 'CIFAR100': 45}
+ylim['AlexNet'] = {'CIFAR10': 65, 'CIFAR100': 60, 'IMAGENET32x32': 55}
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--retrain', action='store_true', default=False)
 
@@ -96,12 +103,14 @@ for network in networks_dict.keys():
 #      axs[i_dataset].set_xlabel("Reduction and Scaling used")
 #      axs[i_dataset].set_ylabel("Convolution weights removed ($\%$)")
       axs[i_dataset].set_title(dataset)
+      axs[i_dataset].set_ylim((0, ylim[network][dataset]))
     else:
       for tick in axs.get_xticklabels():
         tick.set_rotation(90)
 #      axs.set_xlabel("Reduction and Scaling used")
 #      axs.set_ylabel("Convolution weights removed ($\%$)")
       axs.set_title(dataset)
+      axs.set_ylim((0,ylim[network][dataset]))
     for i_bar in range(len(barlist)):
       bar = barlist[i_bar]
       bar.set_hatch(get_norm_hatch(x_bar[i_bar].split('-')[0]))
