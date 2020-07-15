@@ -7,5 +7,5 @@ test_size=400
 test_interval=50
 tolerance=10.0
 iterations=2
-stop_acc=35.0
+stop_acc=30.0
 . ./pruning-scipts-caffe/base_info.sh
