@@ -1,7 +1,7 @@
 #! /bin/bash
 arch=ResNet-20
 dataset=CIFAR10
-train_size=25
+train_size=50
 eval_size=2
 test_size=80
 test_interval=1
