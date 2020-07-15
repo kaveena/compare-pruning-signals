@@ -70,7 +70,7 @@ saliency_scale=none_scale
 mkdir -p $default_save_path
 for (( i=1; i<=$iterations; i++ ))
   do
-  if [[ $i == 1 ]] && [[ $characterise != true ]]
+  if [[ $i == 1 ]] && [[ $characterise == false ]] && [[ $retrain == false ]]
   then
     use_stop_acc=10.0
   else
