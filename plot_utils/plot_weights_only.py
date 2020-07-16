@@ -12,27 +12,61 @@ from utils import *
 from plot_utils.plot_util import *
 import pandas as pd
 
-ylim = dict()
-ylim['LeNet-5'] = {'CIFAR10': 25}
-ylim['CIFAR10'] = {'CIFAR10': 45}
-ylim['ResNet-20'] = {'CIFAR10': 15, 'CIFAR100': 5}
-ylim['NIN'] = {'CIFAR10': 35, 'CIFAR100': 45}
-ylim['AlexNet'] = {'CIFAR10': 65, 'CIFAR100': 60, 'IMAGENET32x32': 55}
+ylim_sensitivity = dict()
+ylim_sensitivity['LeNet-5'] = {'CIFAR10': 25}
+ylim_sensitivity['CIFAR10'] = {'CIFAR10': 45}
+ylim_sensitivity['ResNet-20'] = {'CIFAR10': 15, 'CIFAR100': 5}
+ylim_sensitivity['NIN'] = {'CIFAR10': 35, 'CIFAR100': 45}
+ylim_sensitivity['AlexNet'] = {'CIFAR10': 65, 'CIFAR100': 60, 'IMAGENET32x32': 55}
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--retrain', action='store_true', default=False)
+ylim_retrain = dict()
+ylim_retrain['LeNet-5'] = {'CIFAR10': 85}
+ylim_retrain['CIFAR10'] = {'CIFAR10': 90}
+ylim_retrain['ResNet-20'] = {'CIFAR10': 25, 'CIFAR100': 10}
+ylim_retrain['NIN'] = {'CIFAR10': 75, 'CIFAR100': 60}
+ylim_retrain['AlexNet'] = {'CIFAR10': 75, 'CIFAR100': 65, 'IMAGENET32x32': 55}
 
-args = parser.parse_args()  
+ylim_characterise = dict()
+ylim_characterise['LeNet-5'] = {'CIFAR10': 85}
+ylim_characterise['CIFAR10'] = {'CIFAR10': 75}
+ylim_characterise['ResNet-20'] = {'CIFAR10': 25, 'CIFAR100': 10}
+ylim_characterise['NIN'] = {'CIFAR10': 75, 'CIFAR100': 60}
+ylim_characterise['AlexNet'] = {'CIFAR10': 75, 'CIFAR100': 65, 'IMAGENET32x32': 55}
 
-df = pd.read_csv('summary_no_retraining.csv')
-
-
-networks_dict = { 'LeNet-5': ['CIFAR10'],
+networks_dict_1 = { 'LeNet-5': ['CIFAR10'],
                   'CIFAR10': ['CIFAR10'],
                   'ResNet-20': ['CIFAR10', 'CIFAR100'],
                   'NIN': ['CIFAR10', 'CIFAR100'],
                   'AlexNet': ['CIFAR10', 'CIFAR100', 'IMAGENET32x32']}
 
+networks_dict_2 = { 'LeNet-5': ['CIFAR10'],
+                  'CIFAR10': ['CIFAR10'],
+                  'ResNet-20': ['CIFAR10', 'CIFAR100'],
+                  'NIN': ['CIFAR10', 'CIFAR100'],
+                  'AlexNet': ['CIFAR10', 'CIFAR100']}
+
+networks_dict_3 = { 'LeNet-5': ['CIFAR10'],
+                  'CIFAR10': ['CIFAR10'],
+                  'ResNet-20': ['CIFAR10']}
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--retrain', action='store_true', default=False)
+parser.add_argument('--characterise', action='store_true', default=False)
+
+args = parser.parse_args()  
+
+if args.retrain:
+  df = pd.read_csv('summary_retrain.csv')
+  ylim = ylim_retrain
+  networks_dict = networks_dict_2
+elif args.characterise:
+  df = pd.read_csv('summary_characterise.csv')
+  ylim = ylim_characterise
+  networks_dict = networks_dict_3
+else:
+  df = pd.read_csv('summary_no_retraining.csv')
+  ylim = ylim_sensitivity
+  networks_dict = networks_dict_1
 
 all_metrics = ['network', 'dataset', 'pointwise_saliency', 'saliency_input', 'saliency_reduction', 'saliency_scaling']
 
@@ -80,7 +114,7 @@ df['reduction-scaling'] = df['saliency_reduction'] + '-' + df['saliency_scaling'
 
 for network in networks_dict.keys():
   datasets = networks_dict[network]
-  fig, axs = plt.subplots(len(datasets), 1, figsize=(len(datasets)*5,10))
+  fig, axs = plt.subplots(len(datasets), 1, figsize=(10,len(datasets)*6))
   fig.add_subplot(111, frameon=False)
   plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
   for i_dataset in range(len(datasets)):
@@ -92,11 +126,11 @@ for network in networks_dict.keys():
     x_bar = selected_df['reduction-scaling'].to_list()
     y_bar_color = [get_color_normalisation(i) for i in y_scaling]
     if len(datasets) > 1:
-      #barlist = axs[i_dataset].bar([convert_label(i_x) for i_x in x_bar], y_bar, yerr=y_bar_err, color = y_bar_color, alpha=0.99)
-      barlist = axs[i_dataset].bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color, alpha=0.99)
+      barlist = axs[i_dataset].bar([convert_label(i_x) for i_x in x_bar], y_bar, yerr=y_bar_err, color = y_bar_color, alpha=0.99)
+      #barlist = axs[i_dataset].bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color, alpha=0.99)
     else:
-      #barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, yerr=y_bar_err, color = y_bar_color, alpha=0.99)
-      barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color, alpha=0.99)
+      barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, yerr=y_bar_err, color = y_bar_color, alpha=0.99)
+      #barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color, alpha=0.99)
     if len(datasets) > 1:
       for tick in axs[i_dataset].get_xticklabels():
         tick.set_rotation(90)
@@ -118,4 +152,9 @@ for network in networks_dict.keys():
   plt.ylabel("Convolution weights removed ($\%$)")
   fig.suptitle(network)
   fig.tight_layout(pad=3.0)
-  fig.savefig('graphs/weights_only_' + network + '.pdf') 
+  if args.retrain:
+    fig.savefig('graphs/retrain_weights_only_' + network + '.pdf') 
+  elif args.characterise:
+    fig.savefig('graphs/characterise_weights_only_' + network + '.pdf') 
+  else:
+    fig.savefig('graphs/weights_only_' + network + '.pdf') 

@@ -20,11 +20,21 @@ norms = ['l1_norm', 'l2_norm', 'none_norm', 'abs_sum_norm', 'sqr_sum_norm']
 normalisations = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_normalisation_adjusted', 'weights_removed']
 saliency_inputs = ['weight', 'activation']
 
-networks_dict = { 'LeNet-5': ['CIFAR10'],
+networks_dict_1 = { 'LeNet-5': ['CIFAR10'],
                   'CIFAR10': ['CIFAR10'],
                   'ResNet-20': ['CIFAR10', 'CIFAR100'],
                   'NIN': ['CIFAR10', 'CIFAR100'],
                   'AlexNet': ['CIFAR10', 'CIFAR100', 'IMAGENET32x32']}
+
+networks_dict_2 = { 'LeNet-5': ['CIFAR10'],
+                  'CIFAR10': ['CIFAR10'],
+                  'ResNet-20': ['CIFAR10', 'CIFAR100'],
+                  'NIN': ['CIFAR10', 'CIFAR100'],
+                  'AlexNet': ['CIFAR10', 'CIFAR100']}
+
+networks_dict_3 = { 'LeNet-5': ['CIFAR10'],
+                  'CIFAR10': ['CIFAR10'],
+                  'ResNet-20': ['CIFAR10']}
 
 accuracies = {  'LeNet-5-CIFAR10':        69.35,
                 'CIFAR10-CIFAR10':        72.76,
@@ -36,16 +46,50 @@ accuracies = {  'LeNet-5-CIFAR10':        69.35,
                 'AlexNet-CIFAR100':       54.15,
                 'AlexNet-IMAGENET32x32':  39.69}
 
-dfObj = pd.DataFrame(columns=['pointwise_saliency', 'saliency_input', 'saliency_reduction', 'saliency_scaling', 'network', 'dataset', 'sparsity_mean', 'sparsity_err'])
+max_sparsity = {'LeNet-5-CIFAR10':        84.3,
+                'CIFAR10-CIFAR10':        70.6,
+                'ResNet-20-CIFAR10':      22.1,
+                'NIN-CIFAR10':            0,
+                'AlexNet-CIFAR10':        0,
+                'ResNet-20-CIFAR100':     0,
+                'NIN-CIFAR100':           0,
+                'AlexNet-CIFAR100':       0,
+                'AlexNet-IMAGENET32x32':  0}
 
-def get_error(x, y_mean, y_std, y_point):
+total_channels = {'LeNet-5':        70,
+                  'CIFAR10':        128,
+                  'ResNet-20':      784,
+                  'NIN':            1418,
+                  'AlexNet':        1376}
+
+def get_x_point(x, y, y_point):
+  valid_y = np.where(y > y_point)
+  if len(valid_y) == 0:
+    x_point = x[0]
+  elif len(valid_y) == len(y):
+    x_point = x[-1]
+  else:
+    max_i = valid_y[0][-1]
+    x_point = scipy.interpolate.interp1d([y[max_i+1], y[max_i]], [x[max_i+1], x[max_i]])(y_point)
+  return x_point
+
+def get_x(x, y_mean, y_std, y_point):
   y_b1 = y_mean - 2*y_std
   y_b2 = y_mean + 2*y_std
-  x_point = scipy.interpolate.interp1d(y_mean, x)(y_point)
-  x_error_1_itr = scipy.interpolate.interp1d(y_b1, x)(y_point)
-  x_error_2_itr = scipy.interpolate.interp1d(y_b2, x)(y_point)
+  # find max x for y > y_point
+  x_point = get_x_point(x, y_mean, y_point)
+  x_error_1_itr = get_x_point(x, y_b1, y_point)
+  x_error_2_itr = get_x_point(x, y_b2, y_point)
   x_error = max(np.abs(x_error_1_itr - x_point), np.abs(x_error_2_itr - x_point))
   return x_point, x_error
+
+def get_y(x, y_mean, y_std, x_point):
+  y_b1 = y_mean - 2*y_std
+  y_b2 = y_mean + 2*y_std
+  y_point = scipy.interpolate.interp1d(x, y_mean)(x_point)
+  y_point_std = scipy.interpolate.interp1d(x, y_std)(x_point)
+  y_error = 2*y_point_std
+  return y_point, y_error
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--retrain', action='store_true', default=False)
@@ -56,9 +100,21 @@ parser.add_argument('--iterations', type=int, action='store', default=8)
 parser.add_argument('--metric1', action='store', default='sparsity')
 parser.add_argument('--metric2', action='store', default='test_acc')
 parser.add_argument('--acc-drop', action='store', default=5.0)
+parser.add_argument('--sparsity-drop', action='store', default=10.0)
 
 args = parser.parse_args()  
 
+if args.retrain:
+  networks_dict = networks_dict_2
+elif args.characterise:
+  networks_dict = networks_dict_3
+else:
+  networks_dict = networks_dict_1
+
+if args.characterise:
+  dfObj = pd.DataFrame(columns=['pointwise_saliency', 'saliency_input', 'saliency_reduction', 'saliency_scaling', 'network', 'dataset', 'sparsity_mean', 'sparsity_err'])
+else:
+  dfObj = pd.DataFrame(columns=['pointwise_saliency', 'saliency_input', 'saliency_reduction', 'saliency_scaling', 'network', 'dataset', 'sparsity_mean', 'sparsity_err', 'retraining_steps', 'retraining_steps_err', 'pruning_steps', 'pruning_steps_err', 'pruning_steps_err', 'pruning_steps_err_2'])
 
 for network in networks_dict.keys():
   for dataset in networks_dict[network]:
@@ -111,16 +167,35 @@ for network in networks_dict.keys():
       y_mean = np.zeros(len(x_signals))
       y_sqr_mean = np.zeros(len(x_signals))
       y_std = np.zeros(len(x_signals))
+      if args.characterise:
+        y_mean_steps= np.zeros(len(x_signals))
+        y_sqr_mean_steps = np.zeros(len(x_signals))
+        y_std_steps = np.zeros(len(x_signals))
+        y_mean_itr= np.zeros(len(x_signals))
+        y_sqr_mean_itr = np.zeros(len(x_signals))
+        y_std_itr = np.zeros(len(x_signals))
+        x_itr = np.array(range(0, total_channels[network] + 2))
       for i in range(1, args.iterations + 1):
         summary_file = filename_prefix + method + '_caffe_iter' + str(i) + '.npy'
         if os.path.isfile(summary_file):
           num_iter_ += 1
           summary = dict(np.load(summary_file, allow_pickle=True).item())
-          summary['conv_sparsity'] = 100 *(1 - summary['conv_param'] / float(summary['initial_conv_param']))
+          if args.characterise:
+            f =  lambda x : 0 if x is None else len(x)
+            retraining_steps = np.array([f(x) for x in summary['retraining_acc']])
+            retraining_steps = np.cumsum(retraining_steps)
+#          summary['conv_sparsity'] = 100 *(1 - summary['conv_param'] / float(summary['initial_conv_param']))
           summary['sparsity'] = 100 * (1 - (summary['conv_param'] + summary['fc_param']) / float(summary['initial_conv_param'] + summary['initial_fc_param']))
           y_inter = scipy.interpolate.interp1d(np.hstack([0.0, summary['sparsity'], 100]), np.hstack([accuracies[network + '-' + dataset], summary['test_acc'], 10]))(x_signals)
           y_mean += y_inter
           y_sqr_mean += y_inter ** 2
+          if args.characterise:
+            y_inter_steps = scipy.interpolate.interp1d(np.hstack([0.0, summary['sparsity'], 100]), np.hstack([0, retraining_steps, retraining_steps[-1]]))(x_signals)
+            y_mean_steps += y_inter_steps
+            y_sqr_mean_steps += y_inter_steps ** 2
+            y_inter_itr = scipy.interpolate.interp1d(np.hstack([0.0, summary['sparsity'], 100]), x_itr)(x_signals)
+            y_mean_itr += y_inter_itr
+            y_sqr_mean_itr += y_inter_itr ** 2
       y_mean = y_mean / num_iter_
       y_sqr_mean /= num_iter_
       y_std = (y_sqr_mean - (y_mean**2))
@@ -129,6 +204,21 @@ for network in networks_dict.keys():
       summary_pruning_strategies[method]['sparsity'] = x_signals
       summary_pruning_strategies[method]['test_acc'] = y_mean 
       summary_pruning_strategies[method]['test_acc_std'] = y_std
+      if args.characterise:
+        y_mean_steps = y_mean_steps / num_iter_
+        y_sqr_mean_steps /= num_iter_
+        y_std_steps = (y_sqr_mean_steps - (y_mean_steps**2))
+        y_std_steps = np.piecewise(y_std_steps, [np.abs(y_std_steps) < 1e-10, np.abs(y_std_steps) > 1e-10], [0, lambda x: x])
+        y_std_steps = y_std_steps ** 0.5
+        summary_pruning_strategies[method]['retraining_steps'] = y_mean_steps
+        summary_pruning_strategies[method]['retraining_steps_std'] = y_std_steps
+        y_mean_itr = y_mean_itr / num_iter_
+        y_sqr_mean_itr /= num_iter_
+        y_std_itr = (y_sqr_mean_itr - (y_mean_itr**2))
+        y_std_itr = np.piecewise(y_std_itr, [np.abs(y_std_itr) < 1e-10, np.abs(y_std_itr) > 1e-10], [0, lambda x: x])
+        y_std_itr = y_std_itr ** 0.5
+        summary_pruning_strategies[method]['pruning_steps'] = y_mean_itr
+        summary_pruning_strategies[method]['pruning_steps_std'] = y_std_itr
     for i_s in range(len(caffe_methods)):  
       for i_si in range(len(saliency_inputs)):
         pointwise_saliency = caffe_methods[i_s]
@@ -148,10 +238,19 @@ for network in networks_dict.keys():
             y = summary[args.metric2][::args.test_interval]
             y_std = summary[args.metric2+'_std'][::args.test_interval]
             y_point = accuracies[network + '-' + dataset] - args.acc_drop
-            x_point, x_error = get_error(x, y, y_std, y_point)
-            dfObj = dfObj.append({'pointwise_saliency': pointwise_saliency, 'saliency_input': saliency_input, 'saliency_reduction': norm, 'saliency_scaling': normalisation, 'network': network, 'dataset': dataset, 'sparsity_mean': x_point, 'sparsity_err': x_error}, ignore_index=True)
+            x_point, x_error = get_x(x, y, y_std, y_point)
+            if args.characterise:
+              steps_point, steps_error = get_y(x, summary['retraining_steps'], summary['retraining_steps_std'], x_point)
+              steps_point_2, steps_error_2 = get_y(x, summary['retraining_steps'], summary['retraining_steps_std'], max_sparsity[network+'-'+dataset] - args.sparsity_drop)
+              itr_1, itr_err_1 = get_y(x, summary['pruning_steps'], summary['pruning_steps_std'], x_point)
+              itr_2, itr_err_2 = get_y(x, summary['pruning_steps'], summary['pruning_steps_std'], max_sparsity[network+'-'+dataset] - args.sparsity_drop)
+              dfObj = dfObj.append({'pointwise_saliency': pointwise_saliency, 'saliency_input': saliency_input, 'saliency_reduction': norm, 'saliency_scaling': normalisation, 'network': network, 'dataset': dataset, 'sparsity_mean': x_point, 'sparsity_err': x_error, 'retraining_steps': steps_point, 'retraining_steps_err': steps_error, 'retraining_steps_2': steps_point_2, 'retraining_steps_err_2': steps_error_2 , 'pruning_steps': itr_1, 'pruning_steps_err': itr_err_1, 'pruning_steps_2': itr_2, 'pruning_steps_err_2': itr_err_2}, ignore_index=True)
+            else:
+              dfObj = dfObj.append({'pointwise_saliency': pointwise_saliency, 'saliency_input': saliency_input, 'saliency_reduction': norm, 'saliency_scaling': normalisation, 'network': network, 'dataset': dataset, 'sparsity_mean': x_point, 'sparsity_err': x_error}, ignore_index=True)
 
 if args.characterise:
   dfObj.to_csv('summary_characterise.csv')
+elif args.retrain:
+  dfObj.to_csv('summary_retrain.csv')
 else:
   dfObj.to_csv('summary_no_retraining.csv')

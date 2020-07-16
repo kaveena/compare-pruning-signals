@@ -112,50 +112,62 @@ normalisations = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l
 
 df['reduction-scaling'] = df['saliency_reduction'] + '-' + df['saliency_scaling']
 
-for network in networks_dict.keys():
-  datasets = networks_dict[network]
-  fig, axs = plt.subplots(len(datasets), 1, figsize=(10,len(datasets)*6))
-  fig.add_subplot(111, frameon=False)
-  plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-  for i_dataset in range(len(datasets)):
-    dataset = datasets[i_dataset]
-    #selected_df = df[(df['network'] == network) & (df['dataset'] == dataset) & ( ((df['saliency_input'] == 'weight') & (df['pointwise_saliency'] == 'average_input')) | ((df['saliency_input'] == 'activation') & (df['pointwise_saliency'] == 'average_input')) )]
-    selected_df = df[(df['network'] == network) & (df['dataset'] == dataset) & ( ((df['saliency_input'] == 'activation') & (df['pointwise_saliency'] == 'average_input')) )]
-    y_bar = selected_df['sparsity_mean'].to_list()
-    y_bar_err = selected_df['sparsity_err'].to_list()
-    y_scaling = selected_df['saliency_scaling'].to_list()
-    x_bar = selected_df['reduction-scaling'].to_list()
-    y_bar_color = [get_color_normalisation(i) for i in y_scaling]
-    if len(datasets) > 1:
-      #barlist = axs[i_dataset].bar([convert_label(i_x) for i_x in x_bar], y_bar, yerr=y_bar_err, color = y_bar_color, alpha=0.99)
-      barlist = axs[i_dataset].bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color, alpha=0.99)
-    else:
-      #barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, yerr=y_bar_err, color = y_bar_color, alpha=0.99)
-      barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color, alpha=0.99)
-    if len(datasets) > 1:
-      for tick in axs[i_dataset].get_xticklabels():
-        tick.set_rotation(90)
-#      axs[i_dataset].set_xlabel("Reduction and Scaling used")
-#      axs[i_dataset].set_ylabel("Convolution weights removed ($\%$)")
-      axs[i_dataset].set_title(dataset)
-      axs[i_dataset].set_ylim((0, ylim[network][dataset]))
-    else:
-      for tick in axs.get_xticklabels():
-        tick.set_rotation(90)
-#      axs.set_xlabel("Reduction and Scaling used")
-#      axs.set_ylabel("Convolution weights removed ($\%$)")
-      axs.set_title(dataset)
-      axs.set_ylim((0,ylim[network][dataset]))
-    for i_bar in range(len(barlist)):
-      bar = barlist[i_bar]
-      bar.set_hatch(get_norm_hatch(x_bar[i_bar].split('-')[0]))
-  plt.xlabel("Reduction and Scaling used", labelpad=100)
-  plt.ylabel("Convolution weights removed ($\%$)")
-  fig.suptitle(network)
-  fig.tight_layout(pad=3.0)
-  if args.retrain:
-    fig.savefig('graphs/retrain_activations_only_' + network + '.pdf') 
-  elif args.characterise:
-    fig.savefig('graphs/characterise_activations_only_' + network + '.pdf') 
-  else:
-    fig.savefig('graphs/activations_only_' + network + '.pdf') 
+saliency_inputs = ['weight', 'activation']
+saliency_pointwises = ['average_gradient', 'taylor', 'taylor_2nd_approx2', 'hessian_diag_approx1', 'hessian_diag_approx2']
+ylim = dict()
+ylim['LeNet-5'] = {'CIFAR10': 25}
+ylim['CIFAR10'] = {'CIFAR10': 45}
+ylim['ResNet-20'] = {'CIFAR10': 15, 'CIFAR100': 5}
+ylim['NIN'] = {'CIFAR10': 35, 'CIFAR100': 45}
+ylim['AlexNet'] = {'CIFAR10': 65, 'CIFAR100': 60, 'IMAGENET32x32': 55}
+
+
+for saliency_input in saliency_inputs:
+  for saliency_pointwise in saliency_pointwises:
+    for network in networks_dict.keys():
+      datasets = networks_dict[network]
+      fig, axs = plt.subplots(len(datasets), 1, figsize=(10,len(datasets)*6))
+      fig.add_subplot(111, frameon=False)
+      plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+      for i_dataset in range(len(datasets)):
+        dataset = datasets[i_dataset]
+        #selected_df = df[(df['network'] == network) & (df['dataset'] == dataset) & ( ((df['saliency_input'] == 'weight') & (df['pointwise_saliency'] == 'average_input')) | ((df['saliency_input'] == 'activation') & (df['pointwise_saliency'] == 'average_input')) )]
+        selected_df = df[(df['network'] == network) & (df['dataset'] == dataset) & ( ((df['saliency_input'] == saliency_input) & (df['pointwise_saliency'] == saliency_pointwise)) )]
+        y_bar = selected_df['sparsity_mean'].to_list()
+        y_bar_err = selected_df['sparsity_err'].to_list()
+        y_scaling = selected_df['saliency_scaling'].to_list()
+        x_bar = selected_df['reduction-scaling'].to_list()
+        y_bar_color = [get_color_normalisation(i) for i in y_scaling]
+        if len(datasets) > 1:
+          #barlist = axs[i_dataset].bar([convert_label(i_x) for i_x in x_bar], y_bar, yerr=y_bar_err, color = y_bar_color, alpha=0.99)
+          barlist = axs[i_dataset].bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color, alpha=0.99)
+        else:
+          #barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, yerr=y_bar_err, color = y_bar_color, alpha=0.99)
+          barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color, alpha=0.99)
+        if len(datasets) > 1:
+          for tick in axs[i_dataset].get_xticklabels():
+            tick.set_rotation(90)
+    #      axs[i_dataset].set_xlabel("Reduction and Scaling used")
+    #      axs[i_dataset].set_ylabel("Convolution weights removed ($\%$)")
+          axs[i_dataset].set_title(dataset)
+          axs[i_dataset].set_ylim((0,ylim[network][dataset]))
+        else:
+          for tick in axs.get_xticklabels():
+            tick.set_rotation(90)
+    #      axs.set_xlabel("Reduction and Scaling used")
+    #      axs.set_ylabel("Convolution weights removed ($\%$)")
+          axs.set_title(dataset)
+          axs.set_ylim((0,ylim[network][dataset]))
+        for i_bar in range(len(barlist)):
+          bar = barlist[i_bar]
+          bar.set_hatch(get_norm_hatch(x_bar[i_bar].split('-')[0]))
+      plt.xlabel("Reduction and Scaling used", labelpad=100)
+      plt.ylabel("Convolution weights removed ($\%$)")
+      fig.suptitle(network)
+      fig.tight_layout(pad=3.0)
+      if args.retrain:
+        fig.savefig('graphs/retrain_'+ saliency_input + 's_' + saliency_pointwise + '_only_' + network + '.pdf') 
+      elif args.characterise:
+        fig.savefig('graphs/characterise_'+ saliency_input + 's_' + saliency_pointwise + '_only_' + network + '.pdf') 
+      else:
+        fig.savefig('graphs/'+ saliency_input + 's_' + saliency_pointwise + '_only_' + network + '.pdf') 
