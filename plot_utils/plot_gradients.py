@@ -170,4 +170,5 @@ for saliency_input in saliency_inputs:
       elif args.characterise:
         fig.savefig('graphs/characterise_'+ saliency_input + 's_' + saliency_pointwise + '_only_' + network + '.pdf') 
       else:
-        fig.savefig('graphs/'+ saliency_input + 's_' + saliency_pointwise + '_only_' + network + '.pdf') 
+        fig.savefig('graphs/'+ saliency_input + 's_' + saliency_pointwise + '_only_' + network + '.pdf')
+      plt.close('all')

@@ -12,6 +12,7 @@ from utils import *
 import tempfile
 import scipy.interpolate
 import pandas as pd
+from plot_utils.plot_data_util import *
 
 caffe_methods = ['hessian_diag_approx1', 'hessian_diag_approx2', 'taylor_2nd_approx1', 'taylor_2nd_approx2', 'taylor', 'average_input', 'average_gradient']
 #python_methods = ['apoz']
@@ -20,47 +21,15 @@ norms = ['l1_norm', 'l2_norm', 'none_norm', 'abs_sum_norm', 'sqr_sum_norm']
 normalisations = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_normalisation_adjusted', 'weights_removed']
 saliency_inputs = ['weight', 'activation']
 
-networks_dict_1 = { 'LeNet-5': ['CIFAR10'],
-                  'CIFAR10': ['CIFAR10'],
-                  'ResNet-20': ['CIFAR10', 'CIFAR100'],
-                  'NIN': ['CIFAR10', 'CIFAR100'],
-                  'AlexNet': ['CIFAR10', 'CIFAR100', 'IMAGENET32x32']}
-
-networks_dict_2 = { 'LeNet-5': ['CIFAR10'],
-                  'CIFAR10': ['CIFAR10'],
-                  'ResNet-20': ['CIFAR10', 'CIFAR100'],
-                  'NIN': ['CIFAR10', 'CIFAR100'],
-                  'AlexNet': ['CIFAR10', 'CIFAR100']}
-
-networks_dict_3 = { 'LeNet-5': ['CIFAR10'],
-                  'CIFAR10': ['CIFAR10'],
-                  'ResNet-20': ['CIFAR10']}
-
-accuracies = {  'LeNet-5-CIFAR10':        69.35,
-                'CIFAR10-CIFAR10':        72.76,
-                'ResNet-20-CIFAR10':      88.42,
-                'NIN-CIFAR10':            88.26,
-                'AlexNet-CIFAR10':        84.22,
-                'ResNet-20-CIFAR100':     59.22,
-                'NIN-CIFAR100':           65.7,
-                'AlexNet-CIFAR100':       54.15,
-                'AlexNet-IMAGENET32x32':  39.69}
-
-max_sparsity = {'LeNet-5-CIFAR10':        84.3,
-                'CIFAR10-CIFAR10':        70.6,
-                'ResNet-20-CIFAR10':      22.1,
-                'NIN-CIFAR10':            0,
-                'AlexNet-CIFAR10':        0,
-                'ResNet-20-CIFAR100':     0,
-                'NIN-CIFAR100':           0,
-                'AlexNet-CIFAR100':       0,
-                'AlexNet-IMAGENET32x32':  0}
-
-total_channels = {'LeNet-5':        70,
-                  'CIFAR10':        128,
-                  'ResNet-20':      784,
-                  'NIN':            1418,
-                  'AlexNet':        1376}
+#max_sparsity = {'LeNet-5-CIFAR10':        84.3,
+#                'CIFAR10-CIFAR10':        70.6,
+#                'ResNet-20-CIFAR10':      22.1,
+#                'NIN-CIFAR10':            10.0,
+#                'AlexNet-CIFAR10':        0,
+#                'ResNet-20-CIFAR100':     10.0,
+#                'NIN-CIFAR100':           10.0,
+#                'AlexNet-CIFAR100':       0,
+#                'AlexNet-IMAGENET32x32':  0}
 
 def get_x_point(x, y, y_point):
   valid_y = np.where(y > y_point)
@@ -100,7 +69,7 @@ parser.add_argument('--iterations', type=int, action='store', default=8)
 parser.add_argument('--metric1', action='store', default='sparsity')
 parser.add_argument('--metric2', action='store', default='test_acc')
 parser.add_argument('--acc-drop', action='store', default=5.0)
-parser.add_argument('--sparsity-drop', action='store', default=10.0)
+parser.add_argument('--sparsity-drop', action='store', default=5.0)
 
 args = parser.parse_args()  
 
@@ -174,7 +143,7 @@ for network in networks_dict.keys():
         y_mean_itr= np.zeros(len(x_signals))
         y_sqr_mean_itr = np.zeros(len(x_signals))
         y_std_itr = np.zeros(len(x_signals))
-        x_itr = np.array(range(0, total_channels[network] + 2))
+        x_itr = np.array(range(0, total_channels[network][dataset] + 2))
       for i in range(1, args.iterations + 1):
         summary_file = filename_prefix + method + '_caffe_iter' + str(i) + '.npy'
         if os.path.isfile(summary_file):
