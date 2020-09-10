@@ -1,4 +1,9 @@
 
+inputs = ['weight', 'activation']
+pointwise_saliencies = ['average_input', 'average_gradient', 'taylor', 'taylor_2nd_approx2', 'hessian_diag_approx2', 'taylor_2nd_approx1', 'hessian_diag_approx1']
+reductions = ['none_norm', 'l1_norm', 'l2_norm', 'abs_sum_norm', 'sqr_sum_norm']
+scalings = ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_normalisation_adjusted', 'weights_removed']
+
 ylim_sensitivity = dict()
 ylim_sensitivity['LeNet-5'] = {'CIFAR10': 25}
 ylim_sensitivity['CIFAR10'] = {'CIFAR10': 45}
@@ -36,24 +41,24 @@ networks_dict_3 = { 'LeNet-5': ['CIFAR10'],
                   'CIFAR10': ['CIFAR10'],
                   'ResNet-20': ['CIFAR10', 'CIFAR100'],
                   'NIN': ['CIFAR10', 'CIFAR100'],
-                  'AlexNet': ['CIFAR100']}
+                  'AlexNet': ['CIFAR10', 'CIFAR100', 'IMAGENET32x32']}
 
-max_sparsity = {'LeNet-5-CIFAR10':        84.9,
-                'CIFAR10-CIFAR10':        71.3,
-                'ResNet-20-CIFAR10':      28.0,
-                'NIN-CIFAR10':            73.5,
-                'AlexNet-CIFAR10':        10.0,
-                'ResNet-20-CIFAR100':     13.2,
-                'NIN-CIFAR100':           60.1,
-                'AlexNet-CIFAR100':       66.0,
-                'AlexNet-IMAGENET32x32':  10.0}
+max_sparsity = {'LeNet-5-CIFAR10':        84.3,
+                'CIFAR10-CIFAR10':        66.8,
+                'ResNet-20-CIFAR10':      22.1,
+                'NIN-CIFAR10':            73.0,
+                'AlexNet-CIFAR10':        70.1,
+                'ResNet-20-CIFAR100':     10.8,
+                'NIN-CIFAR100':           58.9,
+                'AlexNet-CIFAR100':       63.7,
+                'AlexNet-IMAGENET32x32':  59.0}
 
 total_channels = dict()
 total_channels['LeNet-5'] = {'CIFAR10': 70}
 total_channels['CIFAR10'] = {'CIFAR10': 128}
 total_channels['ResNet-20'] = {'CIFAR10': 784, 'CIFAR100': 784}
 total_channels['NIN'] = {'CIFAR10': 1418, 'CIFAR100': 1508}
-total_channels['AlexNet'] = {'CIFAR10': 1376, 'CIFAR100': 1376}
+total_channels['AlexNet'] = {'CIFAR10': 1376, 'CIFAR100': 1376, 'IMAGENET32x32': 1376}
 
 accuracies = {  'LeNet-5-CIFAR10':        69.35,
                 'CIFAR10-CIFAR10':        72.76,

@@ -78,13 +78,13 @@ for reduction in ['none_norm', 'l1_norm', 'l2_norm', 'abs_sum_norm', 'sqr_sum_no
   y_bar.append(y_point)
   x_bar.append(reduction)
 x_pos = [i for i, _ in enumerate(x_bar)]
-barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar)
+barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, alpha=0.99)
 for i_bar in range(len(barlist)):
   bar = barlist[i_bar]
   bar.set_hatch(get_norm_hatch(x_bar[i_bar]))
 axs.set_ylabel("Convolution weights removed ($\%$)")
 axs.set_xlabel("Reduction function used")
-plt.savefig('barchart-reduction.pdf') 
+plt.savefig('graphs/barchart-reduction.pdf') 
 
 fig, axs = plt.subplots(1, 1)
 y_bar = []
@@ -98,4 +98,4 @@ for scaling in ['no_normalisation', 'l1_normalisation', 'l2_normalisation', 'l0_
 barlist = axs.bar([convert_label(i_x) for i_x in x_bar], y_bar, color = y_bar_color)
 axs.set_ylabel("Convolution weights removed ($\%$)")
 axs.set_xlabel("Scaling used")
-plt.savefig('barchart-scaling.pdf') 
+plt.savefig('graphs/barchart-scaling.pdf') 

@@ -184,7 +184,8 @@ for network in networks_dict.keys():
         y_mean_itr = y_mean_itr / num_iter_
         y_sqr_mean_itr /= num_iter_
         y_std_itr = (y_sqr_mean_itr - (y_mean_itr**2))
-        y_std_itr = np.piecewise(y_std_itr, [np.abs(y_std_itr) < 1e-10, np.abs(y_std_itr) > 1e-10], [0, lambda x: x])
+        y_std_itr = np.piecewise(y_std_itr, [y_std_itr < 0, y_std_itr > 0], [0, lambda x: x])
+#        y_std_itr = np.piecewise(y_std_itr, [np.abs(y_std_itr) < 1e-10, np.abs(y_std_itr) > 1e-10], [0, lambda x: x])
         y_std_itr = y_std_itr ** 0.5
         summary_pruning_strategies[method]['pruning_steps'] = y_mean_itr
         summary_pruning_strategies[method]['pruning_steps_std'] = y_std_itr
