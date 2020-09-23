@@ -46,15 +46,15 @@ networks_dict_3 = { 'LeNet-5': ['CIFAR10'],
                   'NIN': ['CIFAR10', 'CIFAR100'],
                   'AlexNet': ['CIFAR10', 'CIFAR100', 'IMAGENET32x32']}
 
-max_sparsity = {'LeNet-5-CIFAR10':        84.3,
-                'CIFAR10-CIFAR10':        66.8,
-                'ResNet-20-CIFAR10':      22.1,
-                'NIN-CIFAR10':            73.0,
+max_sparsity = {'LeNet-5-CIFAR10':        84.9,
+                'CIFAR10-CIFAR10':        67.5,
+                'ResNet-20-CIFAR10':      25.4,
+                'NIN-CIFAR10':            73.8,
                 'AlexNet-CIFAR10':        70.1,
-                'ResNet-20-CIFAR100':     10.8,
-                'NIN-CIFAR100':           58.9,
-                'AlexNet-CIFAR100':       63.7,
-                'AlexNet-IMAGENET32x32':  59.0}
+                'ResNet-20-CIFAR100':     12.5,
+                'NIN-CIFAR100':           59.3,
+                'AlexNet-CIFAR100':       64.0,
+                'AlexNet-IMAGENET32x32':  55.4}
 
 total_channels = dict()
 total_channels['LeNet-5'] = {'CIFAR10': 70}
