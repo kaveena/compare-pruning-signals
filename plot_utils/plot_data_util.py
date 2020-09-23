@@ -25,6 +25,9 @@ ylim_characterise['ResNet-20'] = {'CIFAR10': 30, 'CIFAR100': 15}
 ylim_characterise['NIN'] = {'CIFAR10': 75, 'CIFAR100': 65}
 ylim_characterise['AlexNet'] = {'CIFAR10': 75, 'CIFAR100': 65, 'IMAGENET32x32': 55}
 
+networks = ['LeNet-5', 'CIFAR10', 'ResNet-20', 'NIN', 'AlexNet']
+datasets = ['CIFAR10', 'CIFAR100', 'IMAGENET32x32']
+
 networks_dict_1 = { 'LeNet-5': ['CIFAR10'],
                   'CIFAR10': ['CIFAR10'],
                   'ResNet-20': ['CIFAR10', 'CIFAR100'],
