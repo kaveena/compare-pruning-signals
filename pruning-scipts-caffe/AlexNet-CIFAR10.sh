@@ -6,6 +6,6 @@ eval_size=2
 test_size=80
 test_interval=50
 tolerance=10.0
-iterations=2
+iterations=8
 stop_acc=75.0
 . ./pruning-scipts-caffe/base_info.sh
