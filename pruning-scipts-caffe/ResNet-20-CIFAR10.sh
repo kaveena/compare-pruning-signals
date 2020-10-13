@@ -14,8 +14,8 @@ source pruning-scipts-caffe/best_signals.sh
 # best weights
 
 # best activations
-ACTIVATION AVERAGE_INPUT L1 l1_normalisation
-ACTIVATION AVERAGE_INPUT ABS_SUM l1_normalisation
+prune ACTIVATION AVERAGE_INPUT L1 l1_normalisation
+prune ACTIVATION AVERAGE_INPUT ABS_SUM l1_normalisation
 # best gradients
 
 #overall best weights
