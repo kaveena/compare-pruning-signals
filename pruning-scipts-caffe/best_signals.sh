@@ -8,7 +8,7 @@ prune() {
   input_lower=${input,,}
   saliency_method_lower=${saliency_method,,}
   norm_lower=${norm,,}
-  for (( i=1; i<=10; i++ ))
+  for (( i=1; i<=20; i++ ))
     do
     if [[ $i == 1 ]] && [[ $characterise == false ]] && [[ $retrain == false ]]
     then
