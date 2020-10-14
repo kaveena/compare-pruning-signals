@@ -12,11 +12,14 @@ stop_acc=80.0
 source pruning-scipts-caffe/best_signals.sh
 
 # best weights
-
+prune WEIGHT AVERAGE_INPUT L2 weights_removed
+prune WEIGHT AVERAGE_INPUT L1 l1_normalisation
 # best activations
 prune ACTIVATION AVERAGE_INPUT L1 l1_normalisation
 prune ACTIVATION AVERAGE_INPUT ABS_SUM l1_normalisation
 # best gradients
+prune ACTIVATION AVERAGE_GRADIENT SQR_SUM weights_removed
+prune ACTIVATION AVERAGE_GRADIENT ABS_SUM no_normalisation
 
 #overall best weights
 prune WEIGHT AVERAGE_INPUT L1 l1_normalisation
