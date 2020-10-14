@@ -3,7 +3,7 @@
 prune() {
   input=$1
   saliency_method=$2
-  saliency_norm=$3
+  norm=$3
   scaling=$4
   input_lower=${input,,}
   saliency_method_lower=${saliency_method,,}
