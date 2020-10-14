@@ -8,7 +8,7 @@ prune() {
   input_lower=${input,,}
   saliency_method_lower=${saliency_method,,}
   norm_lower=${norm,,}
-  for (( i=1; i<=20; i++ ))
+  for (( i=1; i<=12; i++ ))
     do
     if [[ $i == 1 ]] && [[ $characterise == false ]] && [[ $retrain == false ]]
     then
@@ -47,25 +47,7 @@ prune() {
   done
 }
 
-saliency_input="ACTIVATION WEIGHT"
-saliency_norm="NONE L1 L2 ABS_SUM SQR_SUM"
-saliency_caffe="TAYLOR HESSIAN_DIAG_APPROX1 HESSIAN_DIAG_APPROX2 TAYLOR_2ND_APPROX1 TAYLOR_2ND_APPROX2 
-AVERAGE_INPUT AVERAGE_GRADIENT APOZ"
-scaling_python="l0_normalisation l1_normalisation l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted"
 default_save_path=$arch-$dataset/results/prune
-force=false
-characterise=false
-while getopts ":fircoqp" arg; do
-  case $arg in
-    c ) # Display help.
-      characterise=true
-      retrain=false
-      ;;
-    f ) # Display help.
-      force=true
-      ;;
-  esac
-done
 filename_prefix=$default_save_path/summary_
 if [[ $characterise == true ]]
 then
@@ -73,6 +55,4 @@ then
 else
   filename_prefix=$filename_prefix\sensitivity_
 fi
-
 mkdir -p $default_save_path
-#  prune ACTIVATION TAYLOR_2ND_APPROX2 ABS_SUM weights_removed
