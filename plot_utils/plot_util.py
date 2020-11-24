@@ -17,19 +17,19 @@ def convert_label(label):
   l_prefix = ''
   l_suffix = ''
   if ('none_norm' in labels) or ('N' in labels):
-    l_prefix = ' \sum'
+    l_prefix = ' \sum_{x \in ^lX_i}'
     l_suffix = ' '
   elif 'l1_norm' in labels:
-    l_prefix = ' \sum | '
+    l_prefix = ' \sum_{x \in ^lX_i} | '
     l_suffix = ' | '
   elif 'l2_norm' in labels:
-    l_prefix = ' \sum ( '
+    l_prefix = ' \sum_{x \in ^lX_i} ( '
     l_suffix = ' )^2 '
   elif 'abs_sum_norm' in labels:
-    l_prefix = ' | \sum '
+    l_prefix = ' | \sum_{x \in ^lX_i} '
     l_suffix = ' | '
   elif 'sqr_sum_norm' in labels:
-    l_prefix = ' ( \sum  '
+    l_prefix = ' ( \sum_{x \in ^lX_i}  '
     l_suffix = ' )^2'
   
   if 'average_input' in labels:
@@ -37,28 +37,28 @@ def convert_label(label):
   elif 'average_gradient' in labels:
     l = ' \\frac{d\mathcal{L}}{dx}'
   elif 'taylor_2nd_approx2' in labels:
-    l = ' -x \\frac{d\mathcal{L}}{dx} + \\frac{x^2}{2}\\frac{d^2\mathcal{L}}{dx^2}_{app. 2} (x)'
+    l = ' -x \\frac{d\mathcal{L}}{dx} + \\frac{x^2}{2}\\frac{d^2\mathcal{L}}{dx^2}_{GN} (x)'
   elif 'taylor_2nd_approx1' in labels:
-    l = ' -x \\frac{d\mathcal{L}}{dx} + \\frac{x^2}{2}\\frac{d^2\mathcal{L}}{dx^2}_{app. 1} (x)'
+    l = ' -x \\frac{d\mathcal{L}}{dx} + \\frac{x^2}{2}\\frac{d^2\mathcal{L}}{dx^2}_{LM} (x)'
   elif 'taylor' in labels:
     l = ' -x \\frac{d\mathcal{L}}{dx} (x)'
   elif 'hessian_diag_approx2' in labels:
-    l = ' \\frac{x^2}{2} \\frac{d^2\mathcal{L}}{dx^2}_{app. 2}(x)'
+    l = ' \\frac{x^2}{2} \\frac{d^2\mathcal{L}}{dx^2}_{GN}(x)'
   elif 'hessian_diag_approx1' in labels:
-    l = ' \\frac{x^2}{2} \\frac{d^2\mathcal{L}}{dx^2}_{app. 1} (x)'
+    l = ' \\frac{x^2}{2} \\frac{d^2\mathcal{L}}{dx^2}_{LM} (x)'
   elif 'apoz' in labels:
     l = 'APoZ'
   
   if 'l0_normalisation' in labels:
-    l_prefix = ' \\frac{1}{card(x)}' + l_prefix
+    l_prefix = ' \\frac{1}{n(^lX_i)}' + l_prefix
   elif 'l1_normalisation' in labels:
-    l_prefix = ' \\frac{1}{ \| f(x) \| _1}' + l_prefix
+    l_prefix = ' \\frac{1}{ \|\| ^l\widetilde{S} \|\| _1}' + l_prefix
   elif 'l2_normalisation' in labels:
-    l_prefix = ' \\frac{1}{ \| f(x) \| _2}' + l_prefix
+    l_prefix = ' \\frac{1}{ \|\| ^l\widetilde{S} \|\| _2}' + l_prefix
   elif 'weights_removed' in labels:
-    l_prefix = ' \\frac{1}{n.weights}' + l_prefix
+    l_prefix = ' \\frac{1}{n(\mathcal{TC}(^lW_i))}' + l_prefix
   elif 'l0_normalisation_adjusted' in labels:
-    l_prefix = ' \\frac{1}{card(x_{pruned})}' + l_prefix
+    l_prefix = ' \\frac{1}{n(^lX_i)}' + l_prefix
   
   l_prefix = '$' + l_prefix
   l_suffix = l_suffix + '$' 
@@ -67,16 +67,45 @@ def convert_label(label):
     l_prefix = l_prefix.replace('x', 'a')
     l_suffix = l_suffix.replace('x', 'a')
     l = l.replace('x', 'a')
+    l_prefix = l_prefix.replace('X', 'A')
+    l_suffix = l_suffix.replace('X', 'A')
+    l = l.replace('X', 'A')
   elif 'weight' in labels:
     l_prefix = l_prefix.replace('x', 'w')
     l_suffix = l_suffix.replace('x', 'w')
     l = l.replace('x', 'w')
+    l_prefix = l_prefix.replace('X', 'W')
+    l_suffix = l_suffix.replace('X', 'W')
+    l = l.replace('X', 'W')
   if 'random' in labels:
     l = 'Random'
     l_prefix = ''
     l_suffix = ''
   return l_prefix + l + l_suffix
-0
+
+
+def convert_scaling(labels):
+  l = ' '
+  l_prefix = ''
+  l_suffix = ''
+  
+  if 'l0_normalisation' in labels:
+    l_prefix = ' \\frac{1}{n(^lX_i)}' + l_prefix
+  elif 'l1_normalisation' in labels:
+    l_prefix = ' \\frac{1}{ \|\| ^l\\widetilde{S} \|\| _1}' + l_prefix
+  elif 'l2_normalisation' in labels:
+    l_prefix = ' \\frac{1}{ \|\| ^l\\widetilde{S} \|\| _2}' + l_prefix
+  elif 'weights_removed' in labels:
+    l_prefix = ' \\frac{1}{n(\mathcal{TC}(^lW_i))}' + l_prefix
+  elif 'l0_normalisation_adjusted' in labels:
+    l_prefix = ' \\frac{1}{n(^lX_i)}' + l_prefix
+  elif 'no_normalisation' in labels:
+    l_prefix = '1' + l_prefix
+  
+  l_prefix = '$' + l_prefix
+  l_suffix = l_suffix + '$' 
+  
+  return l_prefix + l + l_suffix
 
 def choose_linewidth(method):
     if 'oracle' in method:
