@@ -124,12 +124,16 @@ for i_s in range(len(scalings)):
 legend_elements = []
 for i_l in range(len(plot_legends)): 
   legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
-legend = plt.legend(handles=legend_elements, title="Scaling factor, L", loc='upper left', fontsize=15, fancybox=True)
-axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
+legend = plt.legend(handles=legend_elements, title="Scaling factor, L", loc='upper left', bbox_to_anchor=(0,0.85), fontsize=15, fancybox=True)
+plt.setp(legend.get_title(),fontsize=15)
+#axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
 axs.set_xticks(x)
 axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
 axs.set_xlabel("Reduction method", fontsize=15)
 axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
+axs.set_ylim((0,53))
+maxSparsity = mean_df['sparsity'].max()
+axs.plot([-0.4, 4.4], [maxSparsity, maxSparsity], "k--")
 fig.tight_layout()
 fig.savefig('graphs/barchart-reduction-scaling.pdf')
 
@@ -163,11 +167,13 @@ legend_elements = []
 for i_l in range(len(plot_legends)): 
   legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
 #legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
-axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
 axs.set_xticks(x)
 axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
 axs.set_xlabel("Reduction method", fontsize=15)
 axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
+axs.set_ylim((0,53))
+maxSparsity = mean_df['sparsity'].max()
+axs.plot([-0.4, 4.4], [maxSparsity, maxSparsity], "k--")
 fig.tight_layout()
 fig.savefig('graphs/barchart-reduction-scaling-activation-taylor_2nd_approx2.pdf')
 
@@ -201,11 +207,13 @@ legend_elements = []
 for i_l in range(len(plot_legends)): 
   legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
 #legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
-axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
 axs.set_xticks(x)
 axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
 axs.set_xlabel("Reduction method", fontsize=15)
 axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
+axs.set_ylim((0,53))
+maxSparsity = mean_df['sparsity'].max()
+axs.plot([-0.4, 4.4], [maxSparsity, maxSparsity], "k--")
 fig.tight_layout()
 fig.savefig('graphs/barchart-reduction-scaling-activation-average_input.pdf')
 
@@ -239,11 +247,13 @@ legend_elements = []
 for i_l in range(len(plot_legends)): 
   legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
 #legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
-axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
 axs.set_xticks(x)
 axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
 axs.set_xlabel("Reduction method", fontsize=15)
 axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
+axs.set_ylim((0,53))
+maxSparsity = mean_df['sparsity'].max()
+axs.plot([-0.4, 4.4], [maxSparsity, maxSparsity], "k--")
 fig.tight_layout()
 fig.savefig('graphs/barchart-reduction-scaling-weight-average_input.pdf')
 
@@ -281,7 +291,6 @@ for network in networks_dict_3.keys():
     legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
     ylim = mean_df['sparsity'].max() + 10
     axs.set_ylim((0, ylim))
-    axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
     axs.set_xticks(x)
     axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
     axs.set_xlabel("Reduction method", fontsize=15)
