@@ -124,7 +124,7 @@ for i_s in range(len(scalings)):
 legend_elements = []
 for i_l in range(len(plot_legends)): 
   legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
-legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
+legend = plt.legend(handles=legend_elements, title="Scaling factor, L", loc='upper left', fontsize=15, fancybox=True)
 axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
 axs.set_xticks(x)
 axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
@@ -133,3 +133,158 @@ axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
 fig.tight_layout()
 fig.savefig('graphs/barchart-reduction-scaling.pdf')
 
+# Average scaling reduction on a-t22
+mean_df = df.reset_index()
+mean_df = mean_df[np.logical_and.reduce((mean_df['saliency_input']=='activation', mean_df['pointwise_saliency'] == 'taylor_2nd_approx2'))]
+mean_df = mean_df.groupby(['saliency_reduction', 'saliency_scaling']).mean()
+mean_df = mean_df.reset_index()
+mean_df['sparsity_err'] = pd.to_numeric(2 * (mean_df['sparsity_sqr'] - (mean_df['sparsity']**2))**0.5)
+mean_df = mean_df.drop(columns=['sparsity_sqr']).dropna()
+mean_df.saliency_reduction = pd.Categorical(mean_df.saliency_reduction, categories=reductions)
+mean_df.saliency_scaling = pd.Categorical(mean_df.saliency_scaling, categories=scalings)
+mean_df = mean_df.sort_values(['saliency_reduction', 'saliency_scaling'])
+fig, axs = plt.subplots(1, 1, figsize=(10,6))
+fig.add_subplot(111, frameon=False)
+plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+axs.tick_params(axis='x', which='major', labelsize=10)
+width = 0.8
+x = np.arange(5)
+for i_s in range(len(scalings)):
+  saliency_scaling = scalings[i_s]
+  selected_df = mean_df[mean_df['saliency_scaling'] == saliency_scaling]
+  y_bar = selected_df['sparsity'].to_list()
+  y_bar_err = selected_df['sparsity_err'].to_list()
+  y_reduction = selected_df['saliency_reduction'].to_list()
+  y_scaling = selected_df['saliency_scaling'].to_list()
+  x_bar = ['-'.join([i,j]) for i, j in zip(y_reduction, y_scaling)]
+  y_bar_color = [get_color_normalisation(i) for i in y_scaling]
+  barlist = axs.bar(x - ( 2 - i_s)*width/5 , y_bar, width/5, color = y_bar_color)
+legend_elements = []
+for i_l in range(len(plot_legends)): 
+  legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
+#legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
+axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
+axs.set_xticks(x)
+axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
+axs.set_xlabel("Reduction method", fontsize=15)
+axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
+fig.tight_layout()
+fig.savefig('graphs/barchart-reduction-scaling-activation-taylor_2nd_approx2.pdf')
+
+# Average scaling reduction on a-avg
+mean_df = df.reset_index()
+mean_df = mean_df[np.logical_and.reduce((mean_df['saliency_input']=='activation', mean_df['pointwise_saliency'] == 'average_input'))]
+mean_df = mean_df.groupby(['saliency_reduction', 'saliency_scaling']).mean()
+mean_df = mean_df.reset_index()
+mean_df['sparsity_err'] = pd.to_numeric(2 * (mean_df['sparsity_sqr'] - (mean_df['sparsity']**2))**0.5)
+mean_df = mean_df.drop(columns=['sparsity_sqr']).dropna()
+mean_df.saliency_reduction = pd.Categorical(mean_df.saliency_reduction, categories=reductions)
+mean_df.saliency_scaling = pd.Categorical(mean_df.saliency_scaling, categories=scalings)
+mean_df = mean_df.sort_values(['saliency_reduction', 'saliency_scaling'])
+fig, axs = plt.subplots(1, 1, figsize=(10,6))
+fig.add_subplot(111, frameon=False)
+plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+axs.tick_params(axis='x', which='major', labelsize=10)
+width = 0.8
+x = np.arange(5)
+for i_s in range(len(scalings)):
+  saliency_scaling = scalings[i_s]
+  selected_df = mean_df[mean_df['saliency_scaling'] == saliency_scaling]
+  y_bar = selected_df['sparsity'].to_list()
+  y_bar_err = selected_df['sparsity_err'].to_list()
+  y_reduction = selected_df['saliency_reduction'].to_list()
+  y_scaling = selected_df['saliency_scaling'].to_list()
+  x_bar = ['-'.join([i,j]) for i, j in zip(y_reduction, y_scaling)]
+  y_bar_color = [get_color_normalisation(i) for i in y_scaling]
+  barlist = axs.bar(x - ( 2 - i_s)*width/5 , y_bar, width/5, color = y_bar_color)
+legend_elements = []
+for i_l in range(len(plot_legends)): 
+  legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
+#legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
+axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
+axs.set_xticks(x)
+axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
+axs.set_xlabel("Reduction method", fontsize=15)
+axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
+fig.tight_layout()
+fig.savefig('graphs/barchart-reduction-scaling-activation-average_input.pdf')
+
+# Average scaling reduction on w-avg
+mean_df = df.reset_index()
+mean_df = mean_df[np.logical_and.reduce((mean_df['saliency_input']=='weight', mean_df['pointwise_saliency'] == 'average_input'))]
+mean_df = mean_df.groupby(['saliency_reduction', 'saliency_scaling']).mean()
+mean_df = mean_df.reset_index()
+mean_df['sparsity_err'] = pd.to_numeric(2 * (mean_df['sparsity_sqr'] - (mean_df['sparsity']**2))**0.5)
+mean_df = mean_df.drop(columns=['sparsity_sqr']).dropna()
+mean_df.saliency_reduction = pd.Categorical(mean_df.saliency_reduction, categories=reductions)
+mean_df.saliency_scaling = pd.Categorical(mean_df.saliency_scaling, categories=scalings)
+mean_df = mean_df.sort_values(['saliency_reduction', 'saliency_scaling'])
+fig, axs = plt.subplots(1, 1, figsize=(10,6))
+fig.add_subplot(111, frameon=False)
+plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+axs.tick_params(axis='x', which='major', labelsize=10)
+width = 0.8
+x = np.arange(5)
+for i_s in range(len(scalings)):
+  saliency_scaling = scalings[i_s]
+  selected_df = mean_df[mean_df['saliency_scaling'] == saliency_scaling]
+  y_bar = selected_df['sparsity'].to_list()
+  y_bar_err = selected_df['sparsity_err'].to_list()
+  y_reduction = selected_df['saliency_reduction'].to_list()
+  y_scaling = selected_df['saliency_scaling'].to_list()
+  x_bar = ['-'.join([i,j]) for i, j in zip(y_reduction, y_scaling)]
+  y_bar_color = [get_color_normalisation(i) for i in y_scaling]
+  barlist = axs.bar(x - ( 2 - i_s)*width/5 , y_bar, width/5, color = y_bar_color)
+legend_elements = []
+for i_l in range(len(plot_legends)): 
+  legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
+#legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
+axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
+axs.set_xticks(x)
+axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
+axs.set_xlabel("Reduction method", fontsize=15)
+axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
+fig.tight_layout()
+fig.savefig('graphs/barchart-reduction-scaling-weight-average_input.pdf')
+
+# Average reduction and scaling per network
+for network in networks_dict_3.keys():
+  for dataset in networks_dict_3[network]:
+    mean_df = df.reset_index()
+    mean_df = mean_df[np.logical_and.reduce((mean_df['network']==network, mean_df.reset_index()['dataset'] == dataset))]
+    mean_df = mean_df.groupby(['saliency_reduction', 'saliency_scaling']).mean()
+    mean_df = mean_df.reset_index()
+    mean_df['sparsity_err'] = pd.to_numeric(2 * (mean_df['sparsity_sqr'] - (mean_df['sparsity']**2))**0.5)
+    mean_df = mean_df.drop(columns=['sparsity_sqr']).dropna()
+    mean_df.saliency_reduction = pd.Categorical(mean_df.saliency_reduction, categories=reductions)
+    mean_df.saliency_scaling = pd.Categorical(mean_df.saliency_scaling, categories=scalings)
+    mean_df = mean_df.sort_values(['saliency_reduction', 'saliency_scaling'])
+    fig, axs = plt.subplots(1, 1, figsize=(10,6))
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    axs.tick_params(axis='x', which='major', labelsize=10)
+    width = 0.8
+    x = np.arange(5)
+    for i_s in range(len(scalings)):
+      saliency_scaling = scalings[i_s]
+      selected_df = mean_df[mean_df['saliency_scaling'] == saliency_scaling]
+      y_bar = selected_df['sparsity'].to_list()
+      y_bar_err = selected_df['sparsity_err'].to_list()
+      y_reduction = selected_df['saliency_reduction'].to_list()
+      y_scaling = selected_df['saliency_scaling'].to_list()
+      x_bar = ['-'.join([i,j]) for i, j in zip(y_reduction, y_scaling)]
+      y_bar_color = [get_color_normalisation(i) for i in y_scaling]
+      barlist = axs.bar(x - ( 2 - i_s)*width/5 , y_bar, width/5, color = y_bar_color)
+    legend_elements = []
+    for i_l in range(len(plot_legends)): 
+      legend_elements.append(mpatches.Patch(facecolor=get_color_normalisation(scalings[i_l]), label=convert_scaling(scalings[i_l]), linewidth = 1))
+    legend = plt.legend(handles=legend_elements, title="Scaling factor", loc='upper left', fontsize=15, fancybox=True)
+    ylim = mean_df['sparsity'].max() + 10
+    axs.set_ylim((0, ylim))
+    axs.set_xticks([-0.65,0.35, 1.35, 2.35,3.35])
+    axs.set_xticks(x)
+    axs.set_xticklabels([convert_label(i_x) for i_x in y_reduction], fontsize=15)
+    axs.set_xlabel("Reduction method", fontsize=15)
+    axs.set_ylabel("Convolution weights removed ($\%$)", fontsize=15)
+    fig.tight_layout()
+    fig.savefig('graphs/barchart-reduction-scaling-{}-{}.pdf'.format(network,dataset))

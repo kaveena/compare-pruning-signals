@@ -164,15 +164,18 @@ for network in networks_dict.keys():
     colors = [mcolors.CSS4_COLORS[c] for c in selected_df['info_cat'].to_list()]
     sparsity_noretraining = selected_df['sparsity_noretraining']
     axes_to_plot = axs
-    axes_to_plot.scatter(sparsity_noretraining, total_cost, color=colors)
+    #axes_to_plot.scatter(sparsity_noretraining, total_cost, color=colors)
+    axes_to_plot.scatter(sparsity_noretraining, total_cost)
     print(network, dataset, scipy.stats.spearmanr(total_cost, sparsity_noretraining), len(selected_df))
 
-    axes_to_plot.set_ylabel('Total steps to remove \n {:.1f} % weights'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=20)
-    axes_to_plot.set_title('{} on {}'.format(network, dataset))
+    #axes_to_plot.set_ylabel('Total steps to remove \n {:.1f} % weights'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=20)
+    axes_to_plot.set_ylabel('Cost of Pruning'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=15)
+    axes_to_plot.set_xlabel('Goodness of Saliency Metric'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=15)
+    axes_to_plot.set_title('{} on {}'.format(network, dataset), fontsize=20)
 
-    plt.xlabel('Weights removed (%) with no retraining', fontsize=20)
+    #plt.xlabel('Weights removed (%) with no retraining', fontsize=20)
 #  fig.suptitle(network)
-    fig.tight_layout(pad=3.0)
+    fig.tight_layout()
     plt.tick_params(axis='both', which='major', labelsize=20)
     plt.tick_params(axis='both', which='minor', labelsize=10)
     fig.savefig('graphs/total_steps_{}-{}.pdf'.format(network, dataset))

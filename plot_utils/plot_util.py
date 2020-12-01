@@ -89,16 +89,28 @@ def convert_scaling(labels):
   l_prefix = ''
   l_suffix = ''
   
+#  if 'l0_normalisation' in labels:
+#    l_prefix = ' \\frac{1}{n(^lX_i)}' + l_prefix
+#  elif 'l1_normalisation' in labels:
+#    l_prefix = ' \\frac{1}{ \|\| ^l\\widetilde{S} \|\| _1}' + l_prefix
+#  elif 'l2_normalisation' in labels:
+#    l_prefix = ' \\frac{1}{ \|\| ^l\\widetilde{S} \|\| _2}' + l_prefix
+#  elif 'weights_removed' in labels:
+#    l_prefix = ' \\frac{1}{n(\mathcal{TC}(^lW_i))}' + l_prefix
+#  elif 'l0_normalisation_adjusted' in labels:
+#    l_prefix = ' \\frac{1}{n(^lX_i)}' + l_prefix
+#  elif 'no_normalisation' in labels:
+#    l_prefix = '1' + l_prefix
   if 'l0_normalisation' in labels:
-    l_prefix = ' \\frac{1}{n(^lX_i)}' + l_prefix
+    l_prefix = 'n(^lX_i)' + l_prefix
   elif 'l1_normalisation' in labels:
-    l_prefix = ' \\frac{1}{ \|\| ^l\\widetilde{S} \|\| _1}' + l_prefix
+    l_prefix = '\|\| ^l\\widetilde{S} \|\| _1' + l_prefix
   elif 'l2_normalisation' in labels:
-    l_prefix = ' \\frac{1}{ \|\| ^l\\widetilde{S} \|\| _2}' + l_prefix
+    l_prefix = '\|\| ^l\\widetilde{S} \|\| _2' + l_prefix
   elif 'weights_removed' in labels:
-    l_prefix = ' \\frac{1}{n(\mathcal{TC}(^lW_i))}' + l_prefix
+    l_prefix = 'n(\mathcal{TC}(^lW_i))' + l_prefix
   elif 'l0_normalisation_adjusted' in labels:
-    l_prefix = ' \\frac{1}{n(^lX_i)}' + l_prefix
+    l_prefix = 'n(^lX_i)' + l_prefix
   elif 'no_normalisation' in labels:
     l_prefix = '1' + l_prefix
   
