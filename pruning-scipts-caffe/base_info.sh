@@ -8,7 +8,7 @@ AVERAGE_INPUT AVERAGE_GRADIENT APOZ"
 saliency_python="random"
 saliency_available=$saliency_caffe$saliency_python
 #scaling_python="l0_normalisation l1_normalisation l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted"
-scaling_python="l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted l1_normalisation"
+scaling_python="l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted l1_normalisation l0_and_weights_removed"
 scaling_saliency="none_scale"
 default_save_path=$arch-$dataset/results/prune
 force=false

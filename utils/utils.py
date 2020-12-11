@@ -155,6 +155,39 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
           if w > 0 :
             layer_scale_factor[i] = w
           final_saliency[graph_layer.output_channel_idx] = graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data / layer_scale_factor
+    elif scaling == 'l0_and_weights_removed':
+      for l in pruning_net.convolution_list:
+        graph_layer = pruning_net.graph[l]
+        layer_scale_factor = np.ones(graph_layer.output_channels)
+        for i in range(graph_layer.output_channels):
+          w = 0
+          global_channel_idx = graph_layer.output_channel_idx[i]
+          # Get number of local parameters
+          w += graph_layer.active_input_channels.sum() * graph_layer.kernel_size
+          # Get other linked sinks and sources
+          sinks, sources = pruning_net.GetAllSinksSources(global_channel_idx, False)
+          # Get their parameters
+          for i_s in sinks:
+            idx_c_sink, idx_conv_sink = pruning_net.GetChannelFromGlobalChannelIdx(i_s, True)
+            sink_layer = pruning_net.graph[idx_conv_sink]
+            if sink_layer.type == 'InnerProduct':
+              w += sink_layer.active_output_channels.sum() * sink_layer.output_size * sink_layer.input_size
+            elif sink_layer.type == 'Convolution':
+              w += sink_layer.active_output_channels.sum() * sink_layer.kernel_size
+          for i_s in sources:
+            idx_c_source, idx_conv_source = pruning_net.GetChannelFromGlobalChannelIdx(i_s, False)
+            source_layer = pruning_net.graph[idx_conv_source]
+            if source_layer.type == 'Convolution':
+              w += source_layer.active_input_channels.sum() * source_layer.kernel_size
+          # scale saliency
+          if w > 0 :
+            if input_saliency_type == 'ACTIVATION':
+              layer_scale_factor[i] = w * graph_layer.height * graph_layer.width
+            elif input_saliency_type == 'WEIGHT':
+              layer_scale_factor[i] = w* graph_layer.active_input_channels.sum() * graph_layer.kernel_size
+            else:
+              sys.exit("Input saliency type not valid")
+          final_saliency[graph_layer.output_channel_idx] = graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data / layer_scale_factor
   elif output_saliency and input_saliency:
     sys.exit("Not yet implemented")
   else:
