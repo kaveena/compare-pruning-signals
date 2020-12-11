@@ -83,6 +83,13 @@ def convert_label(label):
     l_suffix = ''
   return l_prefix + l + l_suffix
 
+def convert_dataset(dataset):
+  if dataset == 'CIFAR10':
+    return 'CIFAR-10'
+  if dataset == 'CIFAR100':
+    return 'CIFAR-100'
+  if dataset == 'IMAGENET32x32':
+    return 'ImageNet-32'
 
 def convert_scaling(labels):
   l = ' '

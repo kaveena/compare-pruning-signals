@@ -169,9 +169,9 @@ for network in networks_dict.keys():
     print(network, dataset, scipy.stats.spearmanr(total_cost, sparsity_noretraining), len(selected_df))
 
     #axes_to_plot.set_ylabel('Total steps to remove \n {:.1f} % weights'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=20)
-    axes_to_plot.set_ylabel('Cost of Pruning'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=15)
-    axes_to_plot.set_xlabel('Goodness of Saliency Metric'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=15)
-    axes_to_plot.set_title('{} on {}'.format(network, dataset), fontsize=20)
+    axes_to_plot.set_ylabel('Total cost of pruning (including retraining)'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=15)
+    axes_to_plot.set_xlabel('Goodness of saliency metric'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=15)
+    axes_to_plot.set_title('{} on {}'.format(network, convert_dataset(dataset)), fontsize=15)
 
     #plt.xlabel('Weights removed (%) with no retraining', fontsize=20)
 #  fig.suptitle(network)
@@ -179,7 +179,6 @@ for network in networks_dict.keys():
     plt.tick_params(axis='both', which='major', labelsize=20)
     plt.tick_params(axis='both', which='minor', labelsize=10)
     fig.savefig('graphs/total_steps_{}-{}.pdf'.format(network, dataset))
-
 plt.close('all')
 
 figsize = (9.5, 0.5)
