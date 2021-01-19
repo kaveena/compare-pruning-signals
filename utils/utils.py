@@ -65,7 +65,7 @@ def add_mask_to_prototxt(original_prototxt):
         l.param[i].lr_mult = 0
         l.param[i].decay_mult = 0
 
-def add_saliency_to_prototxt(original_prototxt, pointwise_saliency, saliency_input, saliency_reduction):
+def add_saliency_to_prototxt(original_prototxt, pointwise_saliency, saliency_input, saliency_reduction, output_channel=True, input_channel=False):
   if not (len(pointwise_saliency) == len(saliency_input) == len(saliency_reduction)):
     os.exit("Provided Saliencies Do Not Match")
   enum_saliency = caffe_pb2.ConvolutionSaliencyParameter.SALIENCY
@@ -75,7 +75,8 @@ def add_saliency_to_prototxt(original_prototxt, pointwise_saliency, saliency_inp
     if l.type == 'Convolution':
       l.convolution_saliency_param.Clear()
       l.convolution_saliency_param.saliency_term = True
-      l.convolution_saliency_param.output_channel_compute = True
+      l.convolution_saliency_param.output_channel_compute = output_channel
+      l.convolution_saliency_param.input_channel_compute = input_channel
       l.convolution_saliency_param.accum = True
       for i in range(len(pointwise_saliency)):
         l.convolution_saliency_param.saliency.append(enum_saliency.Value(pointwise_saliency[i]))
@@ -189,9 +190,60 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
               sys.exit("Input saliency type not valid")
           final_saliency[graph_layer.output_channel_idx] = graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data / layer_scale_factor
   elif output_saliency and input_saliency:
-    sys.exit("Not yet implemented")
-  else:
-    sys.exit("No saliency provided")
+    final_saliency = np.zeros(pruning_net.total_output_channels)
+    for l in pruning_net.convolution_list:
+      graph_layer = pruning_net.graph[l]
+      layer_saliency = np.ones(graph_layer.output_channels)
+      scale_w = np.ones(graph_layer.output_channels)
+      scale_a = np.ones(graph_layer.output_channels)
+      for i in range(graph_layer.output_channels):
+        s = 0
+        w = 0
+        a = 0
+        global_channel_idx = graph_layer.output_channel_idx[i]
+        # Get number of local parameters
+        s += graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data[0][i]
+        w += graph_layer.active_input_channels.sum() * graph_layer.kernel_size
+        a += graph_layer.height * graph_layer.width
+        # Get other linked sinks and sources
+        sinks, sources = pruning_net.GetAllSinksSources(global_channel_idx, False)
+        # Get their parameters
+        for i_s in sinks:
+          idx_c_sink, idx_conv_sink = pruning_net.GetChannelFromGlobalChannelIdx(i_s, True)
+          sink_layer = pruning_net.graph[idx_conv_sink]
+          if sink_layer.type == 'Convolution':
+            s += sink_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data[0][idx_c_sink]
+            w += sink_layer.active_output_channels.sum() * sink_layer.kernel_size
+          elif sink_layer.type == 'InnerProduct':
+            w += sink_layer.active_output_channels.sum() * sink_layer.output_size * sink_layer.input_size
+        for i_s in sources:
+          idx_c_source, idx_conv_source = pruning_net.GetChannelFromGlobalChannelIdx(i_s, False)
+          source_layer = pruning_net.graph[idx_conv_source]
+          if source_layer.type == 'Convolution':
+            s += source_layer.caffe_layer.blobs[graph_layer.saliency_pos].data[0][idx_c_source]
+            w += source_layer.active_input_channels.sum() * source_layer.kernel_size
+        layer_saliency[i] = s
+        scale_w[i] = w
+      if scaling == 'no_normalisation':
+        final_saliency[graph_layer.output_channel_idx] = layer_saliency
+      elif scaling == 'l1_normalisation':
+        layer_scale_factor = np.abs(graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data).sum()
+        if layer_scale_factor <= 0.0:
+          layer_scale_factor = 1.0
+        final_saliency[graph_layer.output_channel_idx] = layer_saliency / layer_scale_factor
+      elif scaling == 'l2_normalisation':
+        layer_scale_factor = (graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data**2).sum()
+        if layer_scale_factor <= 0.0:
+          layer_scale_factor = 1.0
+        else:
+          layer_scale_factor = layer_scale_factor**0.5
+        final_saliency[graph_layer.output_channel_idx] = layer_saliency / layer_scale_factor
+      elif scaling == 'l0_normalisation':
+        sys.exit("Not yet implemented")
+      elif scaling == 'l0_normalisation_adjusted':
+        sys.exit("Not yet implemented")
+      elif scaling == 'weights_removed':
+        final_saliency[graph_layer.output_channel_idx] = layer_saliency / scale_w
   return final_saliency
 
 def test_network(net, itr):

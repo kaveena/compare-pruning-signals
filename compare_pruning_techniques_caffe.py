@@ -105,7 +105,7 @@ for l in saliency_prototxt.layer:
     l.image_data_param.batch_size = 128
     l.image_data_param.source = eval_index_filename
     l.image_data_param.shuffle = True
-add_saliency_to_prototxt(saliency_prototxt, [args.saliency_pointwise], [args.saliency_input], [args.saliency_norm])
+add_saliency_to_prototxt(saliency_prototxt, [args.saliency_pointwise], [args.saliency_input], [args.saliency_norm], args.output_channels, args.input_channels)
 # if second derivative computation is required...
 if args.saliency_pointwise == 'TAYLOR_2ND_APPROX1' or args.saliency_pointwise == 'HESSIAN_DIAG_APPROX1':
   saliency_prototxt.compute_2nd_derivative = True
@@ -193,7 +193,7 @@ for j in range(pruning_net.total_output_channels):
     pruning_signal = np.zeros(net.total_output_channels)
     pruning_signal[random.sample(active_channel, 1)] = -1
   else:
-    pruning_signal = saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, input_saliency_type=args.saliency_input, scaling=args.scaling)
+    pruning_signal = saliency_scaling(pruning_net, output_saliency=args.output_channels, input_saliency=args.input_channels, input_saliency_type=args.saliency_input, scaling=args.scaling)
     pruning_signal /= float(iter+1)
 
   prune_channel_idx = np.argmin(pruning_signal[active_channel])
