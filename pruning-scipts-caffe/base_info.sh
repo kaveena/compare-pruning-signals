@@ -2,13 +2,13 @@
 caffe_models=caffe-pruned-models
 cifar10_data=../caffe-cifar-10-training
 saliency_input="ACTIVATION WEIGHT"
-saliency_norm="NONE L1 L2 ABS_SUM SQR_SUM"
-saliency_caffe="TAYLOR HESSIAN_DIAG_APPROX1 HESSIAN_DIAG_APPROX2 TAYLOR_2ND_APPROX1 TAYLOR_2ND_APPROX2 
-AVERAGE_INPUT AVERAGE_GRADIENT APOZ"
+#saliency_norm="NONE L1 L2 ABS_SUM SQR_SUM"
+saliency_norm="L1 ABS_SUM"
+#saliency_caffe="TAYLOR HESSIAN_DIAG_APPROX1 HESSIAN_DIAG_APPROX2 TAYLOR_2ND_APPROX1 TAYLOR_2ND_APPROX2 AVERAGE_INPUT AVERAGE_GRADIENT APOZ"
+saliency_caffe="TAYLOR TAYLOR_2ND_APPROX2 AVERAGE_INPUT"
 saliency_python="random"
 saliency_available=$saliency_caffe$saliency_python
-#scaling_python="l0_normalisation l1_normalisation l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted"
-scaling_python="l2_normalisation no_normalisation weights_removed l0_normalisation_adjusted l1_normalisation l0_and_weights_removed"
+scaling_python="l1_normalisation no_normalisation weights_removed"
 scaling_saliency="none_scale"
 default_save_path=$arch-$dataset/results/prune
 force=false
@@ -130,24 +130,46 @@ for (( i=1; i<=$iterations; i++ ))
             then
               touch $filename_partial
               echo $filename
-              GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
-              \--filename $filename \
-              \--arch $arch \
-              \--dataset $dataset \
-              \--stop-acc $use_stop_acc \
-              \--characterise $characterise \
-              \--retrain $retrain \
-              \--input-channels $input_channels \
-              \--output-channels $output_channels \
-              \--test-interval $test_interval \
-              \--test-size $test_size \
-              \--eval-size $eval_size \
-              \--train-size $train_size \
-              \--saliency-pointwise $saliency_method \
-              \--saliency-norm $norm \
-              \--scaling $scaling \
-              \--saliency-input $input \
-              \--saliency-scale $saliency_scale
+              if [[ $input_channels == true ]] && [[ $output_channels == false ]]
+              then
+                GLOG_minloglevel=1 python compare_pruning_techniques_input_channels_caffe.py \
+                \--filename $filename \
+                \--arch $arch \
+                \--dataset $dataset \
+                \--stop-acc $use_stop_acc \
+                \--characterise $characterise \
+                \--retrain $retrain \
+                \--input-channels $input_channels \
+                \--output-channels $output_channels \
+                \--test-interval $test_interval \
+                \--test-size $test_size \
+                \--eval-size $eval_size \
+                \--train-size $train_size \
+                \--saliency-pointwise $saliency_method \
+                \--saliency-norm $norm \
+                \--scaling $scaling \
+                \--saliency-input $input \
+                \--saliency-scale $saliency_scale
+              else
+                python -m pdb compare_pruning_techniques_caffe.py \
+                \--filename $filename \
+                \--arch $arch \
+                \--dataset $dataset \
+                \--stop-acc $use_stop_acc \
+                \--characterise $characterise \
+                \--retrain $retrain \
+                \--input-channels $input_channels \
+                \--output-channels $output_channels \
+                \--test-interval $test_interval \
+                \--test-size $test_size \
+                \--eval-size $eval_size \
+                \--train-size $train_size \
+                \--saliency-pointwise $saliency_method \
+                \--saliency-norm $norm \
+                \--scaling $scaling \
+                \--saliency-input $input \
+                \--saliency-scale $saliency_scale
+              fi
               rm $filename_partial
             fi
           fi

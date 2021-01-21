@@ -34,5 +34,5 @@ prune WEIGHT AVERAGE_INPUT L2 no_normalisation
 prune ACTIVATION AVERAGE_INPUT SQR_SUM weights_removed
 prune ACTIVATION AVERAGE_INPUT L1 l0_normalisation_adjusted
 #best gradients
-prune WEIGHT TAYLOR L1 weights_removed
-prune TAYLOR_2ND_APPROX1 L1 weights_removed
+prune ACTIVATION AVERAGE_GRADIENT L1 l0_normalisation_adjusted
+prune ACTIVATION TAYLOR_2ND_APPROX2 L2 weights_removed

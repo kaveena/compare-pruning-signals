@@ -105,7 +105,7 @@ for l in saliency_prototxt.layer:
     l.image_data_param.batch_size = 128
     l.image_data_param.source = eval_index_filename
     l.image_data_param.shuffle = True
-add_saliency_to_prototxt(saliency_prototxt, [args.saliency_pointwise], [args.saliency_input], [args.saliency_norm], args.output_channels, args.input_channels)
+add_saliency_to_prototxt(saliency_prototxt, [args.saliency_pointwise], [args.saliency_input], [args.saliency_norm], True, args.input_channels)
 # if second derivative computation is required...
 if args.saliency_pointwise == 'TAYLOR_2ND_APPROX1' or args.saliency_pointwise == 'HESSIAN_DIAG_APPROX1':
   saliency_prototxt.compute_2nd_derivative = True
@@ -117,9 +117,6 @@ else:
 save_prototxt_to_file(solver_prototxt, solver_prototxt_filename)
 save_prototxt_to_file(masked_prototxt, masked_prototxt_filename)
 save_prototxt_to_file(saliency_prototxt, saliency_prototxt_filename)
-save_prototxt_to_file(solver_prototxt, "new_solver.prototxt")
-save_prototxt_to_file(masked_prototxt, "masked.prototxt")
-save_prototxt_to_file(saliency_prototxt, "saliency.prototxt")
 
 caffe.set_mode_gpu()
 
@@ -141,25 +138,25 @@ pruning_net = PruningGraph(net, saliency_prototxt)
 method = args.saliency_pointwise
 initial_density = 0
 total_param = 0 
-total_output_channels = 0
+total_input_channels = 0
 
 net.reshape()
 
-print('Total number of channels to be considered for pruning: ', pruning_net.total_output_channels)
+print('Total number of channels to be considered for pruning: ', pruning_net.total_input_channels)
 
 summary = dict()
-summary['test_acc'] = np.zeros(pruning_net.total_output_channels)
-summary['test_loss'] = np.zeros(pruning_net.total_output_channels)
-summary['pruned_channel'] = np.zeros(pruning_net.total_output_channels)
+summary['test_acc'] = np.zeros(pruning_net.total_input_channels)
+summary['test_loss'] = np.zeros(pruning_net.total_input_channels)
+summary['pruned_channel'] = np.zeros(pruning_net.total_input_channels)
 summary['method'] = method + '-' + args.scaling
-active_channel = list(range(pruning_net.total_output_channels))
+active_channel = list(range(pruning_net.total_input_channels))
 summary['initial_conv_param'], summary['initial_fc_param'] = pruning_net.GetNumParam()
 summary['initial_test_acc'], summary['initial_test_loss'] = test_network(saliency_solver.test_nets[0], args.test_size)
-summary['eval_loss'] = np.zeros(pruning_net.total_output_channels)
-summary['eval_acc'] = np.zeros(pruning_net.total_output_channels)
-summary['predicted_eval_loss'] = np.zeros(pruning_net.total_output_channels)
-summary['conv_param'] = np.zeros(pruning_net.total_output_channels)
-summary['fc_param'] = np.zeros(pruning_net.total_output_channels)
+summary['eval_loss'] = np.zeros(pruning_net.total_input_channels)
+summary['eval_acc'] = np.zeros(pruning_net.total_input_channels)
+summary['predicted_eval_loss'] = np.zeros(pruning_net.total_input_channels)
+summary['conv_param'] = np.zeros(pruning_net.total_input_channels)
+summary['fc_param'] = np.zeros(pruning_net.total_input_channels)
 
 summary['initial_eval_acc'], summary['initial_eval_loss'] = test_network(net, 100)
 print('Initial eval loss', summary['initial_eval_loss'])
@@ -170,13 +167,13 @@ summary['initial_train_acc'], summary['initial_train_loss'] = test_network(salie
 train_loss_upper_bound = (100 + args.tolerance) * summary['initial_train_loss'] / 100.0
 train_acc_lower_bound = (100 - args.tolerance) * summary['initial_train_acc'] / 100.0
 if args.characterise:
-  summary['train_loss'] = np.zeros(pruning_net.total_output_channels)
-  summary['train_acc'] = np.zeros(pruning_net.total_output_channels)
-  summary['retraining_loss'] = np.empty((pruning_net.total_output_channels,), dtype=object)
-  summary['retraining_acc'] = np.empty((pruning_net.total_output_channels,), dtype=object)
+  summary['train_loss'] = np.zeros(pruning_net.total_input_channels)
+  summary['train_acc'] = np.zeros(pruning_net.total_input_channels)
+  summary['retraining_loss'] = np.empty((pruning_net.total_input_channels,), dtype=object)
+  summary['retraining_acc'] = np.empty((pruning_net.total_input_channels,), dtype=object)
 
 
-for j in range(pruning_net.total_output_channels): 
+for j in range(pruning_net.total_input_channels): 
   pruning_net.ClearSaliencyBlobs()
 
   # compute saliency    
@@ -193,7 +190,7 @@ for j in range(pruning_net.total_output_channels):
   summary['eval_acc'][j] = current_eval_acc / float(iter+1)
 
   if method == 'random':
-    pruning_signal = np.zeros(net.total_output_channels)
+    pruning_signal = np.zeros(net.total_input_channels)
     pruning_signal[random.sample(active_channel, 1)] = -1
   else:
     pruning_signal = saliency_scaling(pruning_net, output_saliency=args.output_channels, input_saliency=args.input_channels, input_saliency_type=args.saliency_input, scaling=args.scaling)

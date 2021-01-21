@@ -85,7 +85,65 @@ def add_saliency_to_prototxt(original_prototxt, pointwise_saliency, saliency_inp
 
 def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, input_saliency_type='WEIGHT', scaling='L0'):
   if input_saliency and not(output_saliency):
-    sys.exit("Not yet implemented")
+    final_saliency = np.zeros(pruning_net.total_input_channels)
+    if scaling == 'no_normalisation':
+      for l in pruning_net.convolution_list:
+        graph_layer = pruning_net.graph[l]
+        final_saliency[graph_layer.input_channel_idx] = graph_layer.caffe_layer.blobs[graph_layer.saliency_pos +1].data
+    elif scaling == 'l1_normalisation':
+      for l in pruning_net.convolution_list:
+        graph_layer = pruning_net.graph[l]
+        layer_scale_factor = np.abs(graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data).sum()
+        if layer_scale_factor <= 0.0:
+          layer_scale_factor = 1.0
+        final_saliency[graph_layer.input_channel_idx] = graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data / layer_scale_factor
+    elif scaling == 'l2_normalisation':
+      for l in pruning_net.convolution_list:
+        graph_layer = pruning_net.graph[l]
+        layer_scale_factor = (graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data**2).sum()
+        if layer_scale_factor <= 0.0:
+          layer_scale_factor = 1.0
+        else:
+          layer_scale_factor = layer_scale_factor**0.5
+        final_saliency[graph_layer.input_channel_idx] = graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data / layer_scale_factor
+    elif scaling == 'l0_normalisation_adjusted':
+      for l in pruning_net.convolution_list:
+        graph_layer = pruning_net.graph[l]
+        if input_saliency_type == 'ACTIVATION':
+          bottom_layer = pruning_net.caffe_net.blobs[pruning_net.caffe_net.bottom_names[l][0]]
+          layer_scale_factor = bottom_layer.height * bottom_layer.width
+        elif input_saliency_type == 'WEIGHT':
+          layer_scale_factor = graph_layer.active_output_channels.sum() * graph_layer.kernel_size
+        else:
+          sys.exit("Input saliency type not valid")
+        final_saliency[graph_layer.input_channel_idx] = graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data / layer_scale_factor
+      for l in pruning_net.convolution_list:
+        graph_layer = pruning_net.graph[l]
+        layer_scale_factor = np.ones(graph_layer.input_channels)
+        for i in range(graph_layer.input_channels):
+          w = 0
+          global_channel_idx = graph_layer.input_channel_idx[i]
+          # Get number of local parameters
+          w += graph_layer.active_output_channels.sum() * graph_layer.kernel_size
+          # Get other linked sinks and sources
+          sinks, sources = pruning_net.GetAllSinksSources(global_channel_idx, True)
+          # Get their parameters
+          for i_s in sinks:
+            idx_c_sink, idx_conv_sink = pruning_net.GetChannelFromGlobalChannelIdx(i_s, True)
+            sink_layer = pruning_net.graph[idx_conv_sink]
+            if sink_layer.type == 'InnerProduct':
+              w += sink_layer.active_output_channels.sum() * sink_layer.output_size * sink_layer.input_size
+            elif sink_layer.type == 'Convolution':
+              w += sink_layer.active_output_channels.sum() * sink_layer.kernel_size
+          for i_s in sources:
+            idx_c_source, idx_conv_source = pruning_net.GetChannelFromGlobalChannelIdx(i_s, False)
+            source_layer = pruning_net.graph[idx_conv_source]
+            if source_layer.type == 'Convolution':
+              w += source_layer.active_input_channels.sum() * source_layer.kernel_size
+          # scale saliency
+          if w > 0 :
+            layer_scale_factor[i] = w
+          final_saliency[graph_layer.input_channel_idx] = graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data / layer_scale_factor
   elif output_saliency and not(input_saliency):
     final_saliency = np.zeros(pruning_net.total_output_channels)
     if scaling == 'no_normalisation':
