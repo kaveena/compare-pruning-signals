@@ -10,6 +10,7 @@ saliency_python="random"
 saliency_available=$saliency_caffe$saliency_python
 scaling_python="l1_normalisation no_normalisation weights_removed"
 scaling_saliency="none_scale"
+
 default_save_path=$arch-$dataset/results/prune
 force=false
 input_channels=false
@@ -151,7 +152,7 @@ for (( i=1; i<=$iterations; i++ ))
                 \--saliency-input $input \
                 \--saliency-scale $saliency_scale
               else
-                python -m pdb compare_pruning_techniques_caffe.py \
+                GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
                 \--filename $filename \
                 \--arch $arch \
                 \--dataset $dataset \

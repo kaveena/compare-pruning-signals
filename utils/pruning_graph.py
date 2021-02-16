@@ -90,6 +90,8 @@ class PruningConvolutionLayer(PruningLayer):
     mask_pos, saliency_pos = self.GetMaskAndSaliencyBlobPosition()
     self.mask_pos = mask_pos
     self.saliency_pos = saliency_pos
+    self.output_channel_compute = prototxt_layer.convolution_saliency_param.output_channel_compute
+    self.input_channel_compute = prototxt_layer.convolution_saliency_param.input_channel_compute
     # create helper attributes
     self.batch = int(caffe_net.blobs[self.name].num)
     self.height = int(caffe_net.blobs[self.name].height)
@@ -538,4 +540,5 @@ class PruningGraph:
         graph_layer = self.graph[layer]
         if graph_layer.saliency_term:
           graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data.fill(0)
-          graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data.fill(0)
+          if graph_layer.input_channel_compute and graph_layer.output_channel_compute:
+            graph_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data.fill(0)
