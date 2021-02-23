@@ -510,33 +510,43 @@ def get_pruning_signals_python(net, output_saliencies, saliency_pointwise, salie
         if (saliency_pointwise == 'TAYLOR'):
           pointwise_saliency = -1 * net.caffe_net.blobs[l].data.sum(axis=0) * net.caffe_net.blobs[l].diff.sum(axis=0)
         if (saliency_pointwise == 'TAYLOR_2ND_APPROX2'):
-          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data.sum(axis=0) * net.caffe_net.blobs[layer].diff.sum(axis=0)) + ((net.caffe_net.blobs[l].data.sum(axis=0) *net.caffe_net.blobs[layer].diff.sum(axis=0) * batch_num )**2)) / batch_num
+          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data.sum(axis=0) * net.caffe_net.blobs[layer].diff.sum(axis=0)) + 0.5*((net.caffe_net.blobs[l].data.sum(axis=0) *net.caffe_net.blobs[layer].diff.sum(axis=0) * batch_num )**2)) / batch_num
       elif avg_a:
         if (saliency_pointwise == 'TAYLOR'):
           pointwise_saliency = -1 * net.caffe_net.blobs[l].data.sum(axis=0) * net.caffe_net.blobs[l].diff
         if (saliency_pointwise == 'TAYLOR_2ND_APPROX2'):
-          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data.sum(axis=0) * net.caffe_net.blobs[layer].diff) + ((net.caffe_net.blobs[l].data.sum(axis=0) *net.caffe_net.blobs[layer].diff * batch_num )**2)) / batch_num
+          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data.sum(axis=0) * net.caffe_net.blobs[layer].diff) + 0.5*((net.caffe_net.blobs[l].data.sum(axis=0) *net.caffe_net.blobs[layer].diff * batch_num )**2)) / batch_num
       elif avg_diff:
         if (saliency_pointwise == 'TAYLOR'):
           pointwise_saliency = -1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[l].diff.sum(axis=0)
         if (saliency_pointwise == 'TAYLOR_2ND_APPROX2'):
-          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[layer].diff.sum(axis=0)) + ((net.caffe_net.blobs[l].data *net.caffe_net.blobs[layer].diff.sum(axis=0) * batch_num )**2)) / batch_num
+          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[layer].diff.sum(axis=0)) + 0.5*((net.caffe_net.blobs[l].data *net.caffe_net.blobs[layer].diff.sum(axis=0) * batch_num )**2)) / batch_num
       else:
         if (saliency_pointwise == 'TAYLOR'):
           pointwise_saliency = -1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[l].diff
         if (saliency_pointwise == 'TAYLOR_2ND_APPROX2'):
-          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[layer].diff) + ((net.caffe_net.blobs[l].data *net.caffe_net.blobs[layer].diff * batch_num )**2)) / batch_num
-      
-      if saliency_reduction == 'L1':
-        channel_saliency = np.abs(pointwise_saliency).sum(axis=(0,2,3))
-      elif saliency_reduction == 'L2':
-        channel_saliency = (pointwise_saliency **2).sum(axis=(0,2,3))
-      elif saliency_reduction == 'ABS_SUM':
-        channel_saliency = np.abs(pointwise_saliency.sum(axis=(2,3))).sum(axis=0)
-      elif saliency_reduction == 'SQR_SUM':
-        channel_saliency = (pointwise_saliency.sum(axis=(2,3))**2).sum(axis=0)
-      elif saliency_reduction == 'NONE':
-        channel_saliency = pointwise_saliency.sum(axis=(0,2,3))
+          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[layer].diff) + 0.5*((net.caffe_net.blobs[l].data *net.caffe_net.blobs[layer].diff * batch_num )**2)) / batch_num
+      if avg_a and avg_diff:
+        if saliency_reduction == 'L1':
+          channel_saliency = np.abs(pointwise_saliency).sum(axis=(1,2))
+        elif saliency_reduction == 'L2':
+          channel_saliency = (pointwise_saliency **2).sum(axis=(1,2))
+        elif saliency_reduction == 'ABS_SUM':
+          channel_saliency = np.abs(pointwise_saliency.sum(axis=(1,2)))
+        elif saliency_reduction == 'SQR_SUM':
+          channel_saliency = (pointwise_saliency.sum(axis=(1,2))**2)
+        elif saliency_reduction == 'NONE':
+          channel_saliency = pointwise_saliency.sum(axis=(1,2))
+      else:
+        if saliency_reduction == 'L1':
+          channel_saliency = np.abs(pointwise_saliency).sum(axis=(0,2,3))
+        elif saliency_reduction == 'L2':
+          channel_saliency = (pointwise_saliency **2).sum(axis=(0,2,3))
+        elif saliency_reduction == 'ABS_SUM':
+          channel_saliency = np.abs(pointwise_saliency.sum(axis=(2,3))).sum(axis=0)
+        elif saliency_reduction == 'SQR_SUM':
+          channel_saliency = (pointwise_saliency.sum(axis=(2,3))**2).sum(axis=0)
+        elif saliency_reduction == 'NONE':
+          channel_saliency = pointwise_saliency.sum(axis=(0,2,3))
     output_saliencies[l] += channel_saliency
-
 
