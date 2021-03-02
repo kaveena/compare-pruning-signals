@@ -520,7 +520,7 @@ def get_pruning_signals_python(net, output_saliencies, saliency_pointwise, salie
         if (saliency_pointwise == 'TAYLOR'):
           pointwise_saliency = -1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[l].diff.sum(axis=0)
         if (saliency_pointwise == 'TAYLOR_2ND_APPROX2'):
-          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[layer].diff.sum(axis=0)) + 0.5*((net.caffe_net.blobs[l].data *net.caffe_net.blobs[layer].diff.sum(axis=0) * batch_num )**2)) / batch_num
+          pointwise_saliency = ((-1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[l].diff.sum(axis=0)) + 0.5*((net.caffe_net.blobs[l].data *net.caffe_net.blobs[l].diff.sum(axis=0) * batch_num )**2)) / batch_num
       else:
         if (saliency_pointwise == 'TAYLOR'):
           pointwise_saliency = -1 * net.caffe_net.blobs[l].data * net.caffe_net.blobs[l].diff

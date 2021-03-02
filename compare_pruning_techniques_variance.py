@@ -30,12 +30,6 @@ def parser():
             help='prefix for storing pruning data')
     parser.add_argument('--stop-acc', type=float, default='10.0',
             help='Stop pruning when test accuracy drops below this value')
-    parser.add_argument('--saliency-pointwise', action='store', default='TAYLOR_2ND_APPROX1',
-            help='pointwise saliency')
-    parser.add_argument('--saliency-norm', action='store', default='NONE',
-            help='Caffe saliency_norm')
-    parser.add_argument('--saliency-input', action='store', default='WEIGHT',
-            help='Caffe saliency_input')
     parser.add_argument('--scaling', action='store', default='l1_normalisation',
             help='Layer-wise scaling to use for saliency')
     parser.add_argument('--test-size', type=int, default=80, 
@@ -46,16 +40,6 @@ def parser():
             help='Number of batches to use for evaluating the saliency')
     parser.add_argument('--test-interval', type=int, default=1, 
             help='After how many pruning steps to test')
-    parser.add_argument('--input-channels', type=str2bool, nargs='?', default=True,
-            help='consider saliency as input channels')
-    parser.add_argument('--output-channels', type=str2bool, nargs='?', default=True,
-            help='consider saliency as output channels')
-    parser.add_argument('--skip-input-channels-only', type=str2bool, nargs='?', default=True,
-            help='skip the channels that are only input channels')
-    parser.add_argument('--skip-output-channels-only', type=str2bool, nargs='?', default=False,
-            help='skip the channels that are only output channels')
-    parser.add_argument('--saliency-scale', action='store', default='none_scale',
-            help='Layer-wise scaling to use for saliency')
     return parser
 
 start = time.time()
@@ -71,14 +55,6 @@ if args.dataset is None:
 
 forward_passes = args.eval_size
 backward_passes = args.eval_size
-if args.saliency_pointwise == 'random':
-  forward_passes = 0
-  backward_passes = 0
-elif args.saliency_pointwise == 'AVG' and args.saliency_input == 'WEIGHT':
-  forward_passes = 1
-  backward_passes = 0
-elif args.saliency_pointwise == 'AVG' or args.saliency_pointwise == 'APOZ':
-  backward_passes = 0
 
 eval_index_filename = './caffe-training-data/' + args.dataset + '/eval-index.txt'
 
@@ -102,7 +78,7 @@ saliency_prototxt = get_prototxt_from_file(original_prototxt_filename)
 add_mask_to_prototxt(saliency_prototxt)
 for l in saliency_prototxt.layer:
   if l.type == 'ImageData':
-    l.image_data_param.batch_size = 128
+    l.image_data_param.batch_size = 125
     l.image_data_param.source = eval_index_filename
     l.image_data_param.shuffle = True
 # if second derivative computation is required...
@@ -130,7 +106,6 @@ net.share_with(saliency_solver.net)
 pruning_net = PruningGraph(net, saliency_prototxt)
 
 # global pruning helpers
-method = args.saliency_pointwise
 initial_density = 0
 total_param = 0 
 total_output_channels = 0
@@ -143,7 +118,6 @@ summary = dict()
 summary['test_acc'] = np.zeros(pruning_net.total_output_channels)
 summary['test_loss'] = np.zeros(pruning_net.total_output_channels)
 summary['pruned_channel'] = np.zeros(pruning_net.total_output_channels)
-summary['method'] = method + '-' + args.scaling
 active_channel = list(range(pruning_net.total_output_channels))
 summary['initial_conv_param'], summary['initial_fc_param'] = pruning_net.GetNumParam()
 summary['initial_test_acc'], summary['initial_test_loss'] = test_network(saliency_solver.test_nets[0], args.test_size)
@@ -173,15 +147,16 @@ input_saliencies = dict()
 act_mean = dict()
 act_sqr = dict()
 act_var = dict()
+act_diff = dict()
 
 for j in range(pruning_net.total_output_channels): 
   for l in pruning_net.convolution_list:
     output_saliencies[l] = np.zeros(pruning_net.graph[l].output_channels)
     input_saliencies[l] = np.zeros(pruning_net.graph[l].input_channels)
-    act_mean = np.zeros(pruning_net.caffe_net.blobs[l].shape)
-    act_diff = np.zeros(pruning_net.caffe_net.blobs[l].shape)
-    act_sqr = np.zeros(pruning_net.caffe_net.blobs[l].shape)
-    act_var = np.zeros(pruning_net.caffe_net.blobs[l].shape)
+    act_mean[l] = np.zeros(pruning_net.caffe_net.blobs[l].shape)
+    act_diff[l] = np.zeros(pruning_net.caffe_net.blobs[l].shape)
+    act_sqr[l] = np.zeros(pruning_net.caffe_net.blobs[l].shape)
+    act_var[l] = np.zeros(pruning_net.caffe_net.blobs[l].shape)
 
   # compute saliency    
   current_eval_loss = 0.0
@@ -190,7 +165,7 @@ for j in range(pruning_net.total_output_channels):
     net.clear_param_diffs()
     output = net.forward()
     net.backward()
-    for l in convolution_list:
+    for l in pruning_net.convolution_list:
       act_mean[l] += net.blobs[l].data
       act_diff[l] += net.blobs[l].diff
       act_sqr[l] += net.blobs[l].data ** 2
@@ -199,11 +174,11 @@ for j in range(pruning_net.total_output_channels):
   summary['eval_loss'][j] = current_eval_loss / float(iter+1)
   summary['eval_acc'][j] = current_eval_acc / float(iter+1)
   pruning_signal = np.array([])
-  for l in convolution_list:
+  for l in pruning_net.convolution_list:
     act_mean[l] = act_mean[l].sum(axis=0)/(float(iter+1) * 125)
     act_sqr[l] = act_sqr[l].sum(axis=0)/(float(iter+1) * 125)
-    act_diff = act_diff[l].sum(axis=0)/(float(iter+1) * 125)
-    act_var[l] = (act_sqr[l] - (act_mean[l]**2)) * act_diff
+    act_diff[l] = act_diff[l].sum(axis=0)/(float(iter+1) * 125)
+    act_var[l] = (act_sqr[l] - (act_mean[l]**2)) * act_diff[l]
     pruning_signal = np.hstack([pruning_signal, act_var[l].sum(axis=(1,2))])
 
   prune_channel_idx = np.argmin(pruning_signal[active_channel])
@@ -244,7 +219,7 @@ for j in range(pruning_net.total_output_channels):
   summary['pruned_channel'][j] = prune_channel
   summary['predicted_eval_loss'][j] = (pruning_signal[active_channel])[prune_channel_idx]
   summary['conv_param'][j], summary['fc_param'][j] = pruning_net.GetNumParam()
-  print(args.scaling, method, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
+  print(args.scaling, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
   active_channel.remove(prune_channel)
   
   if test_acc < args.stop_acc:
