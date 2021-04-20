@@ -8,7 +8,7 @@ saliency_norm="L1 ABS_SUM"
 saliency_caffe="TAYLOR TAYLOR_2ND_APPROX2 AVERAGE_INPUT"
 saliency_python="random"
 saliency_available=$saliency_caffe$saliency_python
-scaling_python="l1_normalisation no_normalisation weights_removed"
+scaling_python="weights_removed no_normalisation"
 scaling_saliency="none_scale"
 
 default_save_path=$arch-$dataset/results/prune
@@ -19,7 +19,8 @@ skip_input_channels=false
 skip_output_channels=false
 retrain=false
 characterise=false
-while getopts ":fircoqp" arg; do
+removeallnodes=true
+while getopts ":fircoqpn" arg; do
   case $arg in
     c ) # Display help.
       characterise=true
@@ -44,6 +45,8 @@ while getopts ":fircoqp" arg; do
       retrain=true
       characterise=false
       ;;
+    n ) # prune single nodes
+      removeallnodes=false
   esac
 done
 filename_prefix=$default_save_path/summary_
@@ -64,6 +67,10 @@ then
   else
     filename_prefix=$filename_prefix\input_channels_
   fi
+fi
+if  [[ $removeallnodes == false ]]
+then
+  filename_prefix=$filename_prefix\single_node_pruning_
 fi
 
 saliency_scale=none_scale
@@ -90,6 +97,10 @@ for (( i=1; i<=$iterations; i++ ))
           norm_lower=${norm,,}
           filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$scaling\_caffe_iter$i.npy
           skip=false
+          if [[ $saliency_method == AVERAGE_INPUT ]] && [[ $input == ACTIVATION ]]
+          then 
+            skip=true
+          fi
           if [[ $saliency_method == HESSIAN_DIAG_APPROX2 ]]
           then 
             if [[ $norm == NONE ]] || [[ $norm == L1 ]] || [[ $norm == ABS_SUM ]]
@@ -150,6 +161,7 @@ for (( i=1; i<=$iterations; i++ ))
                 \--saliency-norm $norm \
                 \--scaling $scaling \
                 \--saliency-input $input \
+                \--remove-all-nodes $removeallnodes \
                 \--saliency-scale $saliency_scale
               else
                 GLOG_minloglevel=1 python compare_pruning_techniques_caffe.py \
@@ -169,6 +181,7 @@ for (( i=1; i<=$iterations; i++ ))
                 \--saliency-norm $norm \
                 \--scaling $scaling \
                 \--saliency-input $input \
+                \--remove-all-nodes $removeallnodes \
                 \--saliency-scale $saliency_scale
               fi
               rm $filename_partial

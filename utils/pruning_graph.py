@@ -53,11 +53,59 @@ def get_consumer_convolution_or_fc(net, initial_consumers, consumer_sink, juncti
     else: 
       consumer_sink.append(initial_consumer) 
 
+def get_consumer_bn(net, initial_consumers, consumer_sink): 
+  for i in range(len(initial_consumers)): 
+    initial_consumer = initial_consumers[i] 
+    if '_split_' in initial_consumer: 
+      split_names = initial_consumer.split('_split_') 
+      parent_split = split_names[0] + '_split' 
+      consumer_type = 'Split'
+    else: 
+      consumer_type = net.layer_dict[initial_consumer].type 
+    if ('Convolution' not in consumer_type) and ('InnerProduct' not in consumer_type): 
+      if ('BatchNorm' not in consumer_type): 
+        get_consumer_bn(net, get_children(net, initial_consumer), consumer_sink) 
+      else:
+        consumer_sink.append(initial_consumer) 
+        get_consumer_bn(net, get_children(net, initial_consumer), consumer_sink) 
+
+def get_consumer_scale(net, initial_consumers, consumer_sink): 
+  for i in range(len(initial_consumers)): 
+    initial_consumer = initial_consumers[i] 
+    if '_split_' in initial_consumer: 
+      split_names = initial_consumer.split('_split_') 
+      parent_split = split_names[0] + '_split' 
+      consumer_type = 'Split'
+    else: 
+      consumer_type = net.layer_dict[initial_consumer].type 
+    if ('Convolution' not in consumer_type) and ('InnerProduct' not in consumer_type): 
+      if ('Scale' not in consumer_type): 
+        get_consumer_scale(net, get_children(net, initial_consumer), consumer_sink) 
+      else:
+        consumer_sink.append(initial_consumer) 
+        get_consumer_scale(net, get_children(net, initial_consumer), consumer_sink) 
+
 def get_sources(net, conv, producer_conv, conv_type, conv_index): 
   get_producer_convolution(net, net.bottom_names[conv], producer_conv, conv_type, conv_index) 
 
 def get_sinks(net, conv, consumer_conv, conv_type, conv_index): 
   get_consumer_convolution_or_fc(net, get_children(net, conv), consumer_conv, conv_type, conv_index, conv) 
+
+def get_bn_sinks(net, conv, consumer_conv):
+  get_consumer_bn(net, get_children(net, conv), consumer_conv)
+  in_place_bn = [] 
+  next_layers = list(net.layer_dict.keys())[(list(net.layer_dict.keys()).index(conv)+1):] 
+  for each in next_layers: 
+    if ((conv in net.bottom_names[each]) and (conv in net.top_names[each])) and (net.layer_dict[each].type == 'BatchNorm'): 
+      consumer_conv.append(each)
+
+def get_scale_sinks(net, conv, consumer_conv):
+  get_consumer_scale(net, get_children(net, conv), consumer_conv)
+  in_place_bn = [] 
+  next_layers = list(net.layer_dict.keys())[(list(net.layer_dict.keys()).index(conv)+1):] 
+  for each in next_layers: 
+    if ((conv in net.bottom_names[each]) and (conv in net.top_names[each])) and (net.layer_dict[each].type == 'Scale'): 
+      consumer_conv.append(each)
 
 class PruningLayer:
   def __init__(self, prototxt_layer, caffe_layer):
@@ -71,10 +119,16 @@ class PruningLayer:
     self.sink_junction_type = []
     self.source_conv_index = []
     self.sink_conv_index = []
+    self.batch_norm_name = []
+    self.scale_name = []
   def GetSources(self, caffe_net):
     get_sources(caffe_net, self.name, self.sources, self.source_junction_type, self.source_conv_index)
   def GetSinks(self, caffe_net):
     get_sinks(caffe_net, self.name, self.sinks, self.sink_junction_type, self.sink_conv_index)
+  def GetBatchNormLayers(self, caffe_net):
+    get_bn_sinks(caffe_net, self.name, self.batch_norm_name)
+  def GetScaleLayers(self, caffe_net):
+    get_scale_sinks(caffe_net, self.name, self.scale_name)
 
 class PruningConvolutionLayer(PruningLayer):
   def __init__(self, prototxt_layer, caffe_net, in_offset, out_offset):
@@ -110,6 +164,14 @@ class PruningConvolutionLayer(PruningLayer):
     self.output_channel_idx = list(range(out_offset, out_offset + self.output_channels))
     self.output_channel_input_idx = np.zeros(self.output_channels).astype(int).reshape(-1, 1).tolist()
     self.input_channel_output_idx = np.zeros(self.input_channels).astype(int).reshape(-1, 1).tolist()
+    self.has_batch_norm = False
+    self.has_scale = False
+    self.GetBatchNormLayers(caffe_net)
+    self.GetScaleLayers(caffe_net)
+    if len(self.batch_norm_name) > 0 :
+      self.has_batch_norm = True
+    if len(self.scale_name) > 0 :
+      self.has_scale = 0;
   def GetMaskAndSaliencyBlobPosition(self):
     bias_pos = 1
     mask_pos = 1
@@ -173,6 +235,14 @@ class PruningInnerProductLayer(PruningLayer):
     if final:
       self.caffe_layer.blobs[0].data[:, int(idx_channel * self.input_size) : int((idx_channel * self.input_size) + self.input_size)].fill(fill)
     #print("pruned input channel ", idx_channel, self.name)
+
+class BatchNormLayer(PruningLayer):
+  def __init__(self, prototxt_layer, caffe_net):
+    PruningLayer.__init__(self, prototxt_layer, caffe_net.layer_dict[prototxt_layer.name])
+    self.GetSources(caffe_net)
+    self.GetSinks(caffe_net)
+    caffe_layer = caffe_net.layer_dict[self.name]
+    self.name = prototxt_layer.name
 
 class PruningGraph:
   def __init__(self, caffe_net, prototxt_net):
@@ -360,6 +430,19 @@ class PruningGraph:
     conv_module = self.graph[idx_convolution]
     # remove local weights
     conv_module.UpdateMaskOutputChannel(idx_channel, final)
+    # if batch norm is present removed its weights
+    if final:
+      if conv_module.has_batch_norm:
+        for bn_layer in conv_module.batch_norm_name:
+          caffe_bn_layer = self.caffe_net.layer_dict[bn_layer]
+          caffe_bn_layer.blobs[0].data[idx_channel] = 0
+          caffe_bn_layer.blobs[1].data[idx_channel] = 0
+      if conv_module.has_scale:
+        for scale_layer in conv_module.scale_name:
+          caffe_scale_layer = self.caffe_net.layer_dict[scale_layer]
+          caffe_scale_layer.blobs[0].data[idx_channel] = 0
+          if len(caffe_scale_layer.blobs) > 1:
+            caffe_scale_layer.blobs[1].data[idx_channel] = 0
     # update desencendants channels
     # if an output channel then update depencies of consumer channels
     if remove_all_nodes:
@@ -369,7 +452,20 @@ class PruningGraph:
         self.graph[idx_conv_sink].UpdateMaskInputChannel(idx_sink, final)
       for global_source_output_idx in found_sources:
         idx_source, idx_conv_source = self.GetChannelFromGlobalChannelIdx(global_source_output_idx, False)
-        self.graph[idx_conv_source].UpdateMaskOutputChannel(idx_source, final)
+        sink_module = self.graph[idx_conv_source]
+        sink_module.UpdateMaskOutputChannel(idx_source, final)
+        if final:
+          if sink_module.has_batch_norm:
+            for bn_layer in sink_module.batch_norm_name:
+              caffe_bn_layer = self.caffe_net.layer_dict[bn_layer]
+              caffe_bn_layer.blobs[0].data[idx_channel] = 0
+              caffe_bn_layer.blobs[1].data[idx_channel] = 0
+          if sink_module.has_scale:
+            for scale_layer in sink_module.scale_name:
+              caffe_scale_layer = self.caffe_net.layer_dict[scale_layer]
+              caffe_scale_layer.blobs[0].data[idx_channel] = 0
+              if len(caffe_scale_layer.blobs) > 1:
+                caffe_scale_layer.blobs[1].data[idx_channel] = 0
     for global_sink_input_idx in conv_module.output_channel_input_idx[int(idx_channel)]:
       if global_sink_input_idx > 0:
         live_channel = self.CheckLiveInputChannel(global_sink_input_idx, [pruned_channel])

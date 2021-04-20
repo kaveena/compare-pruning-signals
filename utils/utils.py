@@ -257,12 +257,12 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
       for i in range(graph_layer.output_channels):
         s = 0
         w = 0
-        a = 0
+        no_a = 0
         global_channel_idx = graph_layer.output_channel_idx[i]
         # Get number of local parameters
         s += graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data[0][i]
         w += graph_layer.active_input_channels.sum() * graph_layer.kernel_size
-        a += graph_layer.height * graph_layer.width
+        no_a += graph_layer.height * graph_layer.width
         # Get other linked sinks and sources
         sinks, sources = pruning_net.GetAllSinksSources(global_channel_idx, False)
         # Get their parameters
@@ -272,16 +272,20 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
           if sink_layer.type == 'Convolution':
             s += sink_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data[0][idx_c_sink]
             w += sink_layer.active_output_channels.sum() * sink_layer.kernel_size
+            no_a += sink_layer.height * sink_layer.width
           elif sink_layer.type == 'InnerProduct':
             w += sink_layer.active_output_channels.sum() * sink_layer.output_size * sink_layer.input_size
+            no_a += sink_layer.input_size
         for i_s in sources:
           idx_c_source, idx_conv_source = pruning_net.GetChannelFromGlobalChannelIdx(i_s, False)
           source_layer = pruning_net.graph[idx_conv_source]
           if source_layer.type == 'Convolution':
             s += source_layer.caffe_layer.blobs[graph_layer.saliency_pos].data[0][idx_c_source]
             w += source_layer.active_input_channels.sum() * source_layer.kernel_size
+            no_a += source_layer.height * source_layer.width
         layer_saliency[i] = s
         scale_w[i] = w
+        scale_a[i] = no_a
       if scaling == 'no_normalisation':
         final_saliency[graph_layer.output_channel_idx] = layer_saliency
       elif scaling == 'l1_normalisation':
@@ -299,7 +303,10 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
       elif scaling == 'l0_normalisation':
         sys.exit("Not yet implemented")
       elif scaling == 'l0_normalisation_adjusted':
-        sys.exit("Not yet implemented")
+        if input_saliency_type == 'ACTIVATION':
+          final_saliency[graph_layer.output_channel_idx] = layer_saliency / scale_a
+        if input_saliency_type == 'WEIGHT':
+          final_saliency[graph_layer.output_channel_idx] = layer_saliency / scale_w
       elif scaling == 'weights_removed':
         final_saliency[graph_layer.output_channel_idx] = layer_saliency / scale_w
   return final_saliency

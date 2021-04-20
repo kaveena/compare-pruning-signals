@@ -9,3 +9,4 @@ tolerance=10.0
 iterations=8
 stop_acc=60.0
 . ./pruning-scipts-caffe/base_info.sh
+. ./pruning-scipts-caffe/base_info_python.sh

@@ -42,7 +42,7 @@ networks_dict_2 = { 'LeNet-5': ['CIFAR10'],
 
 networks_dict_3 = { 'LeNet-5': ['CIFAR10'],
                   'CIFAR10': ['CIFAR10'],
-                  'ResNet-20': ['CIFAR10', 'CIFAR100'],
+                  'ResNet-20': ['CIFAR10', 'CIFAR100', 'IMAGENET2012'],
                   'NIN': ['CIFAR10', 'CIFAR100'],
                   'AlexNet': ['CIFAR10', 'CIFAR100', 'IMAGENET32x32']}
 
@@ -69,6 +69,7 @@ accuracies = {  'LeNet-5-CIFAR10':        69.35,
                 'NIN-CIFAR10':            88.26,
                 'AlexNet-CIFAR10':        84.22,
                 'ResNet-20-CIFAR100':     59.22,
+                'ResNet-20-IMAGENET2012': 68.00,
                 'NIN-CIFAR100':           65.7,
                 'AlexNet-CIFAR100':       54.15,
                 'AlexNet-IMAGENET32x32':  39.69}

@@ -30,7 +30,7 @@ def parser():
             help='prefix for storing pruning data')
     parser.add_argument('--stop-acc', type=float, default='10.0',
             help='Stop pruning when test accuracy drops below this value')
-    parser.add_argument('--saliency-pointwise', action='store', default='TAYLOR_2ND_APPROX1',
+    parser.add_argument('--saliency-pointwise', action='store', default='TAYLOR_2ND_APPROX2',
             help='pointwise saliency')
     parser.add_argument('--saliency-norm', action='store', default='NONE',
             help='Caffe saliency_norm')
@@ -56,6 +56,8 @@ def parser():
             help='skip the channels that are only output channels')
     parser.add_argument('--saliency-scale', action='store', default='none_scale',
             help='Layer-wise scaling to use for saliency')
+    parser.add_argument('--remove-all-nodes', type=str2bool, nargs='?', default=True,
+            help='remove all connected channels when removing a channel')
     return parser
 
 start = time.time()
@@ -105,6 +107,11 @@ for l in saliency_prototxt.layer:
     l.image_data_param.batch_size = 128
     l.image_data_param.source = eval_index_filename
     l.image_data_param.shuffle = True
+    if (args.arch == 'ResNet-20') and (args.dataset == 'IMAGENET2012'):
+      l.image_data_param.batch_size = 32
+    if (args.arch == 'ResNet-50') and (args.dataset == 'IMAGENET2012'):
+      l.image_data_param.batch_size = 8
+    l.data_param.source = eval_index_filename
 add_saliency_to_prototxt(saliency_prototxt, [args.saliency_pointwise], [args.saliency_input], [args.saliency_norm], args.output_channels, args.input_channels)
 # if second derivative computation is required...
 if args.saliency_pointwise == 'TAYLOR_2ND_APPROX1' or args.saliency_pointwise == 'HESSIAN_DIAG_APPROX1':
@@ -201,7 +208,7 @@ for j in range(pruning_net.total_output_channels):
 
   prune_channel_idx = np.argmin(pruning_signal[active_channel])
   prune_channel = active_channel[prune_channel_idx]
-  pruning_net.PruneChannel(prune_channel, final=True, remove_all_nodes=True)
+  pruning_net.PruneChannel(prune_channel, final=True, remove_all_nodes=args.remove_all_nodes)
 
   if args.characterise:
     output_train = saliency_solver.net.forward()

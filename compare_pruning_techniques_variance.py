@@ -40,6 +40,8 @@ def parser():
             help='Number of batches to use for evaluating the saliency')
     parser.add_argument('--test-interval', type=int, default=1, 
             help='After how many pruning steps to test')
+    parser.add_argument('--channel-var', type=str2bool, nargs='?', default=False,
+            help='')
     return parser
 
 start = time.time()
@@ -118,6 +120,10 @@ summary = dict()
 summary['test_acc'] = np.zeros(pruning_net.total_output_channels)
 summary['test_loss'] = np.zeros(pruning_net.total_output_channels)
 summary['pruned_channel'] = np.zeros(pruning_net.total_output_channels)
+summary['ofm_intra_var'] = dict()
+summary['ofm_mean'] = dict()
+summary['ofm_var'] = dict()
+summary['ofm_grad_mean'] = dict()
 active_channel = list(range(pruning_net.total_output_channels))
 summary['initial_conv_param'], summary['initial_fc_param'] = pruning_net.GetNumParam()
 summary['initial_test_acc'], summary['initial_test_loss'] = test_network(saliency_solver.test_nets[0], args.test_size)
@@ -147,7 +153,9 @@ input_saliencies = dict()
 act_mean = dict()
 act_sqr = dict()
 act_var = dict()
+act_intra_var = dict()
 act_diff = dict()
+
 
 for j in range(pruning_net.total_output_channels): 
   for l in pruning_net.convolution_list:
@@ -157,6 +165,7 @@ for j in range(pruning_net.total_output_channels):
     act_diff[l] = np.zeros(pruning_net.caffe_net.blobs[l].shape)
     act_sqr[l] = np.zeros(pruning_net.caffe_net.blobs[l].shape)
     act_var[l] = np.zeros(pruning_net.caffe_net.blobs[l].shape)
+    act_intra_var[l] = np.zeros(pruning_net.caffe_net.blobs[l].shape[1])
 
   # compute saliency    
   current_eval_loss = 0.0
@@ -166,20 +175,39 @@ for j in range(pruning_net.total_output_channels):
     output = net.forward()
     net.backward()
     for l in pruning_net.convolution_list:
+      height = act_mean[l].shape[2]
+      width = act_mean[l].shape[3]
       act_mean[l] += net.blobs[l].data
       act_diff[l] += net.blobs[l].diff
       act_sqr[l] += net.blobs[l].data ** 2
+      act_intra_var[l] += (((net.blobs[l].data ** 2).sum(axis=(2,3))/(height * width)) - ((net.blobs[l].data.sum(axis=(2,3))/(height*width))**2)).sum(axis=0)
     current_eval_loss += output['loss']
     current_eval_acc += output['top-1']
   summary['eval_loss'][j] = current_eval_loss / float(iter+1)
   summary['eval_acc'][j] = current_eval_acc / float(iter+1)
   pruning_signal = np.array([])
+  act_mean_stack = np.array([])
+  grad_mean_stack = np.array([])
+  act_var_stack = np.array([])
+  act_intra_var_stack = np.array([])
   for l in pruning_net.convolution_list:
+    height = act_mean[l].shape[2]
+    width = act_mean[l].shape[3]
     act_mean[l] = act_mean[l].sum(axis=0)/(float(iter+1) * 125)
     act_sqr[l] = act_sqr[l].sum(axis=0)/(float(iter+1) * 125)
     act_diff[l] = act_diff[l].sum(axis=0)/(float(iter+1) * 125)
-    act_var[l] = (act_sqr[l] - (act_mean[l]**2)) * act_diff[l]
-    pruning_signal = np.hstack([pruning_signal, act_var[l].sum(axis=(1,2))])
+    act_var[l] = act_sqr[l] - (act_mean[l]**2)
+    act_intra_var[l] = act_intra_var[l] / (float(iter+1) * 125)
+    act_mean_stack = np.hstack([act_mean_stack, act_mean[l].sum(axis=(1,2)) / (height * width)])
+    act_intra_var_stack = np.hstack([act_intra_var_stack, act_intra_var[l]])
+    act_var_stack = np.hstack([act_var_stack, act_var[l].sum(axis=(1,2))/ (height * width)])
+    grad_mean_stack = np.hstack([grad_mean_stack, act_diff[l].sum(axis=(1,2))/ (height * width)])
+    if args.channel_var:
+      pruning_signal = np.hstack([pruning_signal, np.abs((act_var[l].sum(axis=(1,2))) * (act_diff[l].sum(axis=(1,2))))])
+#      pruning_signal = np.hstack([pruning_signal, np.abs((act_var[l].sum(axis=(1,2))/ (height * width)) * (act_diff[l].sum(axis=(1,2))/(height * width)))])
+    else:
+      pruning_signal = np.hstack([pruning_signal, np.abs((act_var[l] * act_diff[l]).sum(axis=(1,2)))])
+#      pruning_signal = np.hstack([pruning_signal, np.abs((act_var[l] * act_diff[l]).sum(axis=(1,2))/(height * width))])
 
   prune_channel_idx = np.argmin(pruning_signal[active_channel])
   prune_channel = active_channel[prune_channel_idx]
@@ -217,6 +245,10 @@ for j in range(pruning_net.total_output_channels):
   summary['test_acc'][j] = test_acc
   summary['test_loss'][j] = ce_loss
   summary['pruned_channel'][j] = prune_channel
+  summary['ofm_intra_var'][j] = act_intra_var_stack
+  summary['ofm_mean'][j] = act_mean_stack
+  summary['ofm_var'][j] = act_var_stack
+  summary['ofm_grad_mean'][j] = grad_mean_stack
   summary['predicted_eval_loss'][j] = (pruning_signal[active_channel])[prune_channel_idx]
   summary['conv_param'][j], summary['fc_param'][j] = pruning_net.GetNumParam()
   print(args.scaling, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
