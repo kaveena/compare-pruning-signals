@@ -270,7 +270,7 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
           idx_c_sink, idx_conv_sink = pruning_net.GetChannelFromGlobalChannelIdx(i_s, True)
           sink_layer = pruning_net.graph[idx_conv_sink]
           if sink_layer.type == 'Convolution':
-            s += sink_layer.caffe_layer.blobs[graph_layer.saliency_pos+1].data[0][idx_c_sink]
+            s += sink_layer.caffe_layer.blobs[sink_layer.saliency_pos+1].data[0][idx_c_sink]
             w += sink_layer.active_output_channels.sum() * sink_layer.kernel_size
             no_a += sink_layer.height * sink_layer.width
           elif sink_layer.type == 'InnerProduct':
@@ -280,7 +280,7 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
           idx_c_source, idx_conv_source = pruning_net.GetChannelFromGlobalChannelIdx(i_s, False)
           source_layer = pruning_net.graph[idx_conv_source]
           if source_layer.type == 'Convolution':
-            s += source_layer.caffe_layer.blobs[graph_layer.saliency_pos].data[0][idx_c_source]
+            s += source_layer.caffe_layer.blobs[source_layer.saliency_pos].data[0][idx_c_source]
             w += source_layer.active_input_channels.sum() * source_layer.kernel_size
             no_a += source_layer.height * source_layer.width
         layer_saliency[i] = s
@@ -289,12 +289,12 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
       if scaling == 'no_normalisation':
         final_saliency[graph_layer.output_channel_idx] = layer_saliency
       elif scaling == 'l1_normalisation':
-        layer_scale_factor = np.abs(graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data).sum()
+        layer_scale_factor = np.abs(layer_saliency).sum()
         if layer_scale_factor <= 0.0:
           layer_scale_factor = 1.0
         final_saliency[graph_layer.output_channel_idx] = layer_saliency / layer_scale_factor
       elif scaling == 'l2_normalisation':
-        layer_scale_factor = (graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data**2).sum()
+        layer_scale_factor = (layer_saliency**2).sum()
         if layer_scale_factor <= 0.0:
           layer_scale_factor = 1.0
         else:
