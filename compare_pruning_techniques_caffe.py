@@ -111,7 +111,9 @@ for l in saliency_prototxt.layer:
       l.image_data_param.batch_size = 32
     if (args.arch == 'ResNet-50') and (args.dataset == 'IMAGENET2012'):
       l.image_data_param.batch_size = 8
-    l.data_param.source = eval_index_filename
+    if (args.arch == 'NFNET-F0') and (args.dataset == 'IMAGENET2012'):
+      l.image_data_param.batch_size = 32
+#    l.data_param.source = eval_index_filename
 add_saliency_to_prototxt(saliency_prototxt, [args.saliency_pointwise], [args.saliency_input], [args.saliency_norm], args.output_channels, args.input_channels)
 # if second derivative computation is required...
 if args.saliency_pointwise == 'TAYLOR_2ND_APPROX1' or args.saliency_pointwise == 'HESSIAN_DIAG_APPROX1':
