@@ -200,7 +200,7 @@ class PruningConvolutionLayer(PruningLayer):
       self.caffe_layer.blobs[1].data[idx_channel] = fill
     if self.mask_term:
       self.caffe_layer.blobs[self.mask_pos].data[idx_channel].fill(0 if fill == 0 else 1)
-    if self.bias_term and prune_bias and mask_term:
+    if self.bias_term and prune_bias and self.mask_term:
       self.caffe_layer.blobs[self.mask_pos+1].data[idx_channel] = 0 if fill ==0 else 1
     self.active_output_channels[idx_channel] = 0 if fill == 0 else 1
     self.active_ofm[idx_channel] = 0 if fill == 0 else 1
