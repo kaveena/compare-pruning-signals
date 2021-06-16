@@ -311,6 +311,96 @@ def saliency_scaling(pruning_net, output_saliency=True, input_saliency=False, in
         final_saliency[graph_layer.output_channel_idx] = layer_saliency / scale_w
   return final_saliency
 
+def saliency_scaling_regular(pruning_net, output_saliency=True, input_saliency=False, transitive=False, input_saliency_type='WEIGHT', scaling='no_normalisation'):
+  if input_saliency and not(output_saliency):
+    sys.exit("Not yet implemented")
+  elif output_saliency:
+    final_saliency = np.zeros(pruning_net.total_output_channels)
+    for l in pruning_net.convolution_list:
+      graph_layer = pruning_net.graph[l]
+      layer_saliency = np.zeros(graph_layer.output_channels)
+      scale_w = 0
+      scale_a = 0
+      saliency_w = 0
+      saliency_a = 0
+      layer_saliency += graph_layer.caffe_layer.blobs[graph_layer.saliency_pos].data[0]
+      scale_w += graph_layer.active_input_channels.sum() * graph_layer.kernel_size
+      scale_a += graph_layer.height * graph_layer.width
+      saliency_w += graph_layer.active_input_channels.sum() * graph_layer.kernel_size
+      saliency_a += graph_layer.height * graph_layer.width
+      group = False
+      g = 1
+
+      next_sources = []
+      next_sinks = []
+      if input_saliency and transitive:
+        next_sources = graph_layer.transitive_conv_sources
+        next_sinks = graph_layer.transitive_conv_sinks
+      elif input_saliency and not(transitive):
+        next_sinks = graph_layer.conv_sinks
+      elif not(input_saliency) and transitive:
+        next_sources = graph_layer.transitive_conv_sources
+
+      for i_source in next_sources:
+        source_layer = pruning_net.graph[i_source]
+        layer_saliency += source_layer.caffe_layer.blobs[source_layer.saliency_pos].data[0]
+        saliency_w += source_layer.active_input_channels.sum() * source_layer.kernel_size
+        saliency_a += source_layer.height * source_layer.width
+      for i_sink in next_sinks:
+        sink_layer = pruning_net.graph[i_sink]
+        if not(group) and sink_layer.group > 1:
+          group = True
+          g = sink_layer.group
+        elif group and sink_layer != g:
+          sys.exit("multiple groups not yet implemented")
+        n_g = sink_layer.input_channels
+        layer_saliency[0: n_g] += sink_layer.caffe_layer.blobs[sink_layer.saliency_pos+1].data[0]
+        saliency_w += sink_layer.active_output_channels.sum() * sink_layer.kernel_size
+        saliency_a += sink_layer.height * sink_layer.width
+
+      if group:
+        combined_saliency = layer_saliency.reshape((g, -1)).sum(axis=0)
+        n_g = int(len(layer_saliency) / g)
+        for i in range(g):
+          layer_saliency[n_g*i : n_g*(i+1)] = combined_saliency
+
+
+      for i_source in graph_layer.transitive_sources:
+        source_layer = pruning_net.graph[i_source]
+        if source_layer.type == 'Convolution':
+          scale_w += source_layer.active_input_channels.sum() * source_layer.kernel_size
+          scale_a += source_layer.height * source_layer.width
+        elif source_layer.type == 'InnerProduct':
+          scale_w += source_layer.active_input_channels.sum() * source_layer.input_size
+      for i_sink in graph_layer.transitive_sinks:
+        sink_layer = pruning_net.graph[i_sink]
+        if sink_layer.type == 'InnerProduct':
+          scale_w += sink_layer.active_output_channels.sum() * sink_layer.output_size * sink_layer.input_size
+          scale_a += sink_layer.input_size
+        elif sink_layer.type == 'Convolution':
+          scale_w += sink_layer.active_output_channels.sum() * sink_layer.kernel_size
+          scale_a += sink_layer.height * sink_layer.width
+
+      layer_scale = 1
+      if scaling == 'l1_normalisation':
+        layer_scale = np.abs(layer_saliency).sum()
+      elif scaling == 'l2_normalisation':
+        layer_scale = (layer_saliency**2).sum()
+        if layer_scale == 0:
+          layer_scale = 1.0
+        else:
+          layer_scale = layer_scale**0.5
+      elif scaling == 'weights_removed':
+        layer_scale = scale_w
+      elif scaling == 'l0_normalisation_adjusted' and input_saliency_type == 'WEIGHT':
+        layer_scale = saliency_w
+      elif scaling == 'l0_normalisation_adjusted' and input_saliency_type == 'ACTIVATION':
+        layer_scale = saliency_a
+      if layer_scale == 0:
+        layer_scale = 1.0
+      final_saliency[graph_layer.output_channel_idx] = layer_saliency / layer_scale
+  return final_saliency
+
 def saliency_python_scaling(pruning_net, output_saliencies, input_saliencies, output_saliency=True, input_saliency=False, input_saliency_type='WEIGHT', scaling='L0'):
   if input_saliency and not(output_saliency):
     final_saliency = np.zeros(pruning_net.total_input_channels)

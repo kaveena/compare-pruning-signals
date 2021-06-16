@@ -137,6 +137,10 @@ class PruningConvolutionLayer(PruningLayer):
     self.GetSources(caffe_net)
     self.GetSinks(caffe_net)
     caffe_layer = caffe_net.layer_dict[self.name]
+    self.conv_sinks = list(filter(lambda x: 'Convolution' in caffe_layer.type, self.sinks))
+    self.conv_sources = list(filter(lambda x: 'Convolution' in caffe_layer.type, self.sources))
+    self.fc_sinks = list(filter(lambda x: 'InnerProduct' in caffe_layer.type, self.sinks))
+    self.fc_sources = list(filter(lambda x: 'InnerProduct' in caffe_layer.type, self.sources))
     self.bias_term = prototxt_layer.convolution_param.bias_term
     self.mask_term = prototxt_layer.convolution_mask_param.mask_term
     self.saliency_term = prototxt_layer.convolution_saliency_param.saliency_term
@@ -169,6 +173,10 @@ class PruningConvolutionLayer(PruningLayer):
     self.has_scale = False
     self.GetBatchNormLayers(caffe_net)
     self.GetScaleLayers(caffe_net)
+    self.transitive_sinks = []
+    self.transitive_sources = []
+    self.transitive_conv_sinks = []
+    self.transitive_conv_sources = []
     if len(self.batch_norm_name) > 0 :
       self.has_batch_norm = True
     if len(self.scale_name) > 0 :
@@ -231,6 +239,8 @@ class PruningInnerProductLayer(PruningLayer):
     self.output_channel_idx = list(range(out_offset, out_offset + self.output_channels))
     self.output_channel_input_idx = np.zeros(self.output_channels).reshape(-1, 1).tolist()
     self.input_channel_output_idx = np.zeros(self.input_channels).reshape(-1, 1).tolist()
+    self.has_batch_norm = False
+    self.has_scale = False
   def UpdateMaskInputChannel(self, idx_channel, final=True, fill=0):
     self.active_input_channels[idx_channel] = 0 if fill == 0 else 1
     self.active_ifm[idx_channel] = 0 if fill == 0 else 1
@@ -241,9 +251,9 @@ class PruningInnerProductLayer(PruningLayer):
     self.active_output_channels[idx_channel] = 0 if fill == 0 else 1
     self.active_ofm[idx_channel] = 0 if fill == 0 else 1
     if final:
-      self.caffe_layer.blobs_[0].data[idx_channel, :].fill(fill)
+      self.caffe_layer.blobs[0].data[idx_channel, :].fill(fill)
       if self.bias_term:
-        self.caffe_layer.blobs_[1].data[idx_channel, :].fill(fill)
+        self.caffe_layer.blobs[1].data[idx_channel] = fill
 class BatchNormLayer(PruningLayer):
   def __init__(self, prototxt_layer, caffe_net):
     PruningLayer.__init__(self, prototxt_layer, caffe_net.layer_dict[prototxt_layer.name])
@@ -293,6 +303,11 @@ class PruningGraph:
     self.output_channel_sources = [[] for i in range(self.total_output_channels)]
     for i in range(self.total_output_channels):
       self.output_channel_sinks[i], self.output_channel_sources[i] = self.GetAllSinksSources(i, False)
+    for l in self.convolution_list:
+      layer = self.graph[l]
+      layer.transitive_sinks, layer.transitive_sources = self.GetAllSinksSourcesLayers(l, False)
+      layer.transitive_conv_sinks = list(filter(lambda x: 'Convolution' in caffe_net.layer_dict[x].type, layer.transitive_sinks))
+      layer.transitive_conv_sources = list(filter(lambda x: 'Convolution' in caffe_net.layer_dict[x].type, layer.transitive_sources))
   def GetFirstAndLastConvolution(self):
     first_layer = []
     last_layer = []
@@ -602,6 +617,20 @@ class PruningGraph:
         list_sinks = self.graph[idx_convolution].output_channel_input_idx[channel]
         for i_sink in list(set(list_sinks) - set(found_sinks)):
           self.GetAllSinksSourcesItr(i_sink, found_sinks, found_sources, is_input_channel=True)
+  def GetAllSinksSourcesLayersItr(self, layer, found_sinks, found_sources, is_sink=False):
+    if is_sink:
+      if layer not in found_sinks:
+        found_sinks.append(layer)
+      list_sources = self.graph[layer].sources
+      for i_source in list(set(list_sources) - set(found_sources)):
+        self.GetAllSinksSourcesLayersItr(i_source, found_sinks, found_sources, is_sink=False)
+    else:
+      if layer not in found_sources:
+        found_sources.append(layer)
+      list_sinks = self.graph[layer].sinks
+      for i_sink in list(set(list_sinks) - set(found_sinks)):
+        self.GetAllSinksSourcesLayersItr(i_sink, found_sinks, found_sources, is_sink=True)
+
   def CheckGlobalLiveOutputChannel(self, channel):
     return self.CheckGlobalLiveChannelItr(channel, [], [], False, False)
   def CheckGlobalCanPruneOutputChannel(self, channel):
@@ -618,6 +647,15 @@ class PruningGraph:
       found_sinks.remove(channel)
     else:
       found_sources.remove(channel)
+    return found_sinks, found_sources
+  def GetAllSinksSourcesLayers(self, layer, is_input=False):
+    found_sinks = []
+    found_sources = []
+    self.GetAllSinksSourcesLayersItr(layer, found_sinks, found_sources, is_input)
+    if is_input:
+      found_sinks.remove(layer)
+    else:
+      found_sources.remove(layer)
     return found_sinks, found_sources
   def LoadWeightsFromDict(self, weights):
     for l in weights.keys():

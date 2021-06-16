@@ -58,10 +58,15 @@ def parser():
             help='Layer-wise scaling to use for saliency')
     parser.add_argument('--remove-all-nodes', type=str2bool, nargs='?', default=True,
             help='remove all connected channels when removing a channel')
+    parser.add_argument('--transitive-saliency', type=str2bool, nargs='?', default=False,
+            help='remove all connected channels when removing a channel')
     return parser
 
 start = time.time()
 args = parser().parse_args()
+
+if args.input_channels and args.output_channels:
+  args.transitive_saliency = True
 
 if args.arch is None:
   print("Caffe network needed")
@@ -185,7 +190,7 @@ if args.characterise:
   summary['retraining_acc'] = np.empty((pruning_net.total_output_channels,), dtype=object)
 
 
-for j in range(pruning_net.total_output_channels): 
+for j in range(pruning_net.total_output_channels):
   pruning_net.ClearSaliencyBlobs()
 
   # compute saliency    
@@ -205,7 +210,7 @@ for j in range(pruning_net.total_output_channels):
     pruning_signal = np.zeros(net.total_output_channels)
     pruning_signal[random.sample(active_channel, 1)] = -1
   else:
-    pruning_signal = saliency_scaling(pruning_net, output_saliency=args.output_channels, input_saliency=args.input_channels, input_saliency_type=args.saliency_input, scaling=args.scaling)
+    pruning_signal = saliency_scaling_regular(pruning_net, output_saliency=args.output_channels, input_saliency=args.input_channels, transitive=args.transitive_saliency, input_saliency_type=args.saliency_input, scaling=args.scaling)
     pruning_signal /= float(iter+1)
 
   prune_channel_idx = np.argmin(pruning_signal[active_channel])
@@ -248,8 +253,12 @@ for j in range(pruning_net.total_output_channels):
   summary['conv_param'][j], summary['fc_param'][j] = pruning_net.GetNumParam()
   print(args.scaling, method, ' Step: ', j +1,'  ||   Remove Channel: ', prune_channel, '  ||  Test Acc: ', test_acc)
   active_channel.remove(prune_channel)
+  if args.remove_all_nodes:
+    for transitive_channel in pruning_net.output_channel_sources[prune_channel]:
+      if transitive_channel in active_channel:
+        active_channel.remove(transitive_channel)
   
-  if test_acc < args.stop_acc:
+  if test_acc < args.stop_acc or len(active_channel) < 1:
       break
 
 end = time.time()
