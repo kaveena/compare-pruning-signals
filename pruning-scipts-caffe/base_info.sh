@@ -20,6 +20,7 @@ skip_output_channels=false
 retrain=false
 characterise=false
 removeallnodes=true
+transitive=true
 while getopts ":fircoqpn" arg; do
   case $arg in
     c ) # Display help.
@@ -34,6 +35,9 @@ while getopts ":fircoqpn" arg; do
       ;;
     o ) # Display help.
       output_channels=true
+      ;;
+    t ) # transitive saliency
+      transitive=true
       ;;
     q ) # Display help.
       skip_input_channels=true
@@ -66,6 +70,13 @@ then
     filename_prefix=$filename_prefix\input_output_channels_
   else
     filename_prefix=$filename_prefix\input_channels_
+  fi
+fi
+if [[ $output_channels == true ]]
+then
+  if [[ $transitive == true ]]
+  then
+    filename_prefix=$filename_prefix\transitive_
   fi
 fi
 if  [[ $removeallnodes == false ]]
@@ -173,6 +184,7 @@ for (( i=1; i<=$iterations; i++ ))
                 \--retrain $retrain \
                 \--input-channels $input_channels \
                 \--output-channels $output_channels \
+                \--transitive-saliency $transitive \
                 \--test-interval $test_interval \
                 \--test-size $test_size \
                 \--eval-size $eval_size \
