@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 #rcParams.update({'figure.autolayout': True})
 
-df_caffe = pd.read_csv('no_retraining_input_output.csv')
-df_var = pd.read_csv('no_retraining_single_node.csv')
-df_caffe = df_caffe.drop(columns=['iteration'])
-df_var = df_var.drop(columns=['iteration'])
-df_merge = pd.merge(df_caffe, df_var, on=['network', 'dataset', 'saliency_input', 'pointwise_saliency', 'saliency_reduction', 'saliency_scaling'], suffixes=['_all_nodes', '_single_node'])
+df_io = pd.read_csv('no_retraining_input_output.csv')
+df_no = pd.read_csv('no_retraining_single_node.csv')
+df_io = df_io.drop(columns=['iteration'])
+df_no = df_no.drop(columns=['iteration'])
+df_merge = pd.merge(df_io, df_no, on=['network', 'dataset', 'saliency_input', 'pointwise_saliency', 'saliency_reduction', 'saliency_scaling'], suffixes=['_all_nodes', '_single_node'])
 df_merge = df_merge.drop(columns=['Unnamed: 0_all_nodes', 'Unnamed: 0_single_node'])
 mean_df = df_merge.groupby(['network', 'dataset', 'saliency_input', 'pointwise_saliency', 'saliency_reduction', 'saliency_scaling']).mean()
 #mean_df['sparsity_err_x'] = pd.to_numeric( 2*(((mean_df['sparsity_sqr_x']) - (mean_df['sparsity_x']**2))**0.5))

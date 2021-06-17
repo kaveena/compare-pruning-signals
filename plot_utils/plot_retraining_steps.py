@@ -4,11 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
-from plot_utils.plot_util import *
 from functools import reduce
 import sys
 import gc
+import utils
 from utils import *
+import plot_utils
 from plot_utils.plot_util import *
 from plot_utils.plot_data_util import *
 import pandas as pd
@@ -48,13 +49,13 @@ ylim = ylim_characterise
 networks_dict = networks_dict_3
 df = df.drop(columns=['Unnamed: 0', 'retraining_steps', 'pruning_steps'])
 
-df['saliency_computation'] = 2
+df['saliency_computation'] = 3
 df.loc[(df['saliency_input'] == 'weight') & (df['pointwise_saliency'] == 'average_input'), 'saliency_computation'] = 0
 df.loc[(df['saliency_input'] == 'activation') & (df['pointwise_saliency'] == 'average_input'), 'saliency_computation'] = 1
-df.loc[(df['pointwise_saliency'] == 'hessian_diag_approx1'), 'saliency_computation'] = 3
-df.loc[(df['pointwise_saliency'] == 'taylor_2nd_approx1'), 'saliency_computation'] = 3
+df.loc[(df['pointwise_saliency'] == 'hessian_diag_approx1'), 'saliency_computation'] = 5
+df.loc[(df['pointwise_saliency'] == 'taylor_2nd_approx1'), 'saliency_computation'] = 5
 
-df['total_cost'] = (df['pruning_steps_2'] * df['saliency_computation'] * 2) + 2*df['retraining_steps_2']
+df['total_cost'] = (df['pruning_steps_2'] * df['saliency_computation'] * 2) + 3*df['retraining_steps_2']
 
 
 
@@ -166,7 +167,7 @@ for network in networks_dict.keys():
     axes_to_plot = axs
     #axes_to_plot.scatter(sparsity_noretraining, total_cost, color=colors)
     axes_to_plot.scatter(sparsity_noretraining, total_cost)
-    print(network, dataset, scipy.stats.spearmanr(total_cost, sparsity_noretraining), len(selected_df))
+    print(network, convert_dataset(dataset), scipy.stats.spearmanr(total_cost, sparsity_noretraining), len(selected_df), min(total_cost), max(total_cost))
 
     #axes_to_plot.set_ylabel('Total steps to remove \n {:.1f} % weights'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=20)
     axes_to_plot.set_ylabel('Total cost of pruning (including retraining)'.format(max_sparsity[network+'-'+dataset]-args.sparsity_drop), fontsize=15)
