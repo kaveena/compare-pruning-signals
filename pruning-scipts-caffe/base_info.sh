@@ -20,7 +20,7 @@ skip_output_channels=false
 retrain=false
 characterise=false
 removeallnodes=true
-transitive=true
+transitive=false
 while getopts ":fircoqpn" arg; do
   case $arg in
     c ) # Display help.
@@ -72,7 +72,7 @@ then
     filename_prefix=$filename_prefix\input_channels_
   fi
 fi
-if [[ $output_channels == true ]]
+if [[ $output_channels == true ]] && [[ $input_channels == false ]]
 then
   if [[ $transitive == true ]]
   then
