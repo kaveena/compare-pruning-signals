@@ -21,7 +21,7 @@ retrain=false
 characterise=false
 removeallnodes=true
 transitive=false
-while getopts ":fircoqpn" arg; do
+while getopts ":fircoqpnt" arg; do
   case $arg in
     c ) # Display help.
       characterise=true
