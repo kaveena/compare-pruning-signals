@@ -8,7 +8,7 @@ saliency_norm="L1"
 saliency_caffe="TAYLOR AVERAGE_INPUT"
 saliency_python="random"
 saliency_available=$saliency_caffe$saliency_python
-scaling_python="weights_removed no_normalisation"
+scaling_python="l0_normalisation_adjusted no_normalisation"
 scaling_saliency="none_scale"
 
 default_save_path=$arch-$dataset/results/prune

@@ -6,7 +6,7 @@ eval_size=2
 test_size=400
 test_interval=50
 tolerance=10.0
-iterations=8
+iterations=4
 stop_acc=30.0
 . ./pruning-scipts-caffe/base_info.sh
 . ./pruning-scipts-caffe/base_var_gradient.sh
