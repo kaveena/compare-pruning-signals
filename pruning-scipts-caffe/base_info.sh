@@ -3,7 +3,7 @@ caffe_models=caffe-pruned-models
 cifar10_data=../caffe-cifar-10-training
 saliency_input="ACTIVATION WEIGHT"
 #saliency_norm="NONE L1 L2 ABS_SUM SQR_SUM"
-saliency_norm="L1"
+saliency_norm="L1 SQR_SUM"
 #saliency_caffe="TAYLOR HESSIAN_DIAG_APPROX1 HESSIAN_DIAG_APPROX2 TAYLOR_2ND_APPROX1 TAYLOR_2ND_APPROX2 AVERAGE_INPUT AVERAGE_GRADIENT APOZ"
 saliency_caffe="TAYLOR AVERAGE_INPUT"
 saliency_python="random"
@@ -109,6 +109,10 @@ for (( i=1; i<=$iterations; i++ ))
           filename=$filename_prefix$input_lower-$saliency_method_lower-$norm_lower\_norm-$scaling\_caffe_iter$i.npy
           skip=false
           if [[ $saliency_method == AVERAGE_INPUT ]] && [[ $input == ACTIVATION ]]
+          then 
+            skip=true
+          fi
+          if [[ $saliency_method == AVERAGE_INPUT ]] && [[ $norm == ABS_SUM ]]
           then 
             skip=true
           fi
