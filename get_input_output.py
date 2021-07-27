@@ -134,11 +134,11 @@ for network in networks_dict.keys():
       if os.path.isfile(summary_file):
         summary_pruning_strategies[saliency] = dict(np.load(summary_file, allow_pickle=True).item()) 
       else:
-        print(summary_file+'was not found')
+      #  print(summary_file+'was not found')
         saliencies.remove(saliency)
 
     all_pruning = list(set(saliencies))
-
+    print(network, dataset, len(all_pruning))
     x_signals = np.arange(0, 101, 1)
 
     for pointwise_saliency in pointwise_saliencies:  
@@ -164,7 +164,8 @@ for network in networks_dict.keys():
                   f =  lambda x : 0 if x is None else len(x)
                   retraining_steps = np.array([f(x) for x in summary['retraining_acc']])
                   retraining_steps = np.cumsum(retraining_steps)
-                summary['sparsity'] = 100 * (1 - (summary['conv_param'] + summary['fc_param']) / float(summary['initial_conv_param'] + summary['initial_fc_param']))
+                summary['sparsity'] = 100 * (1 - (summary['conv_param']) / float(summary['initial_conv_param']))
+                #summary['sparsity'] = 100 * (1 - (summary['conv_param'] + summary['fc_param']) / float(summary['initial_conv_param'] + summary['initial_fc_param']))
                 y_inter = scipy.interpolate.interp1d(np.hstack([0.0, summary['sparsity'], 100]), np.hstack([accuracies[network + '-' + dataset], summary['test_acc'], 10]))(x_signals)
                 if args.characterise:
                   y_inter_steps = scipy.interpolate.interp1d(np.hstack([0.0, summary['sparsity'], 100]), np.hstack([0, retraining_steps, retraining_steps[-1]]))(x_signals)
@@ -208,11 +209,17 @@ if args.input:
     dfObj.to_csv('retrain_input.csv')
   else:
     dfObj.to_csv('no_retraining_input.csv')
-if args.input_output:
+elif args.input_output:
   if args.characterise:
     dfObj.to_csv('characterise_input_output.csv')
   elif args.retrain:
     dfObj.to_csv('retrain_input_output.csv')
   else:
     dfObj.to_csv('no_retraining_input_output.csv')
-
+else:
+  if args.characterise:
+    dfObj.to_csv('characterise_output.csv')
+  elif args.retrain:
+    dfObj.to_csv('retrain_output.csv')
+  else:
+    dfObj.to_csv('no_retraining_output.csv')

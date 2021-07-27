@@ -52,6 +52,7 @@ parser.add_argument('--retrain', action='store_true', default=False)
 parser.add_argument('--characterise', action='store_true', default=False)
 parser.add_argument('--input', action='store_true', default=False)
 parser.add_argument('--input-output', action='store_true', default=False)
+parser.add_argument('--transitive', action='store_true', default=False)
 parser.add_argument('--test-interval', type=int, action='store', default=1)
 parser.add_argument('--iterations', type=int, action='store', default=8)
 parser.add_argument('--acc-drop', action='store', default=5.0)
@@ -124,7 +125,11 @@ for network in networks_dict.keys():
       filename_prefix = filename_prefix + 'characterise_'
     else:
       filename_prefix = filename_prefix + 'sensitivity_'
-    filename_prefix = filename_prefix + 'single_node_pruning_'
+
+    if args.transitive:
+      filename_prefix = filename_prefix + 'transitive_'
+    else:
+      filename_prefix = filename_prefix + 'single_node_pruning_'
 
     for saliency in all_saliencies:
       summary_file = filename_prefix + saliency + '_caffe_iter1.npy'
@@ -161,7 +166,7 @@ for network in networks_dict.keys():
                   f =  lambda x : 0 if x is None else len(x)
                   retraining_steps = np.array([f(x) for x in summary['retraining_acc']])
                   retraining_steps = np.cumsum(retraining_steps)
-                summary['sparsity'] = 100 * (1 - (summary['conv_param'] + summary['fc_param']) / float(summary['initial_conv_param'] + summary['initial_fc_param']))
+                summary['sparsity'] = 100 * (1 - (summary['conv_param']) / float(summary['initial_conv_param']))
                 y_inter = scipy.interpolate.interp1d(np.hstack([0.0, summary['sparsity'], 100]), np.hstack([accuracies[network + '-' + dataset], summary['test_acc'], 10]))(x_signals)
                 if args.characterise:
                   y_inter_steps = scipy.interpolate.interp1d(np.hstack([0.0, summary['sparsity'], 100]), np.hstack([0, retraining_steps, retraining_steps[-1]]))(x_signals)
@@ -198,10 +203,20 @@ for network in networks_dict.keys():
                   'iteration': i,
                   'sparsity': sparsity
                   }, ignore_index=True)
-if args.characterise:
-  dfObj.to_csv('characterise_single_node.csv')
-elif args.retrain:
-  dfObj.to_csv('retrain_single_node.csv')
+
+
+if args.transitive:
+  if args.characterise:
+    dfObj.to_csv('characterise_transitive.csv')
+  elif args.retrain:
+    dfObj.to_csv('retrain_transitive.csv')
+  else:
+    dfObj.to_csv('no_retraining_transitive.csv')
 else:
-  dfObj.to_csv('no_retraining_single_node.csv')
+  if args.characterise:
+    dfObj.to_csv('characterise_single_node.csv')
+  elif args.retrain:
+    dfObj.to_csv('retrain_single_node.csv')
+  else:
+    dfObj.to_csv('no_retraining_single_node.csv')
 
